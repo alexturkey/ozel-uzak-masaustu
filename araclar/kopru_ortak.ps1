@@ -9,6 +9,7 @@
     sayac.txt     sıradaki giden mesaj numarası
     giden\ gelen\ gelen\ek\ gelen\tekrar\ test\
     DUR           varsa köprü durur (gönderme ve bekleme yapılmaz)
+    KAPALI        köprü kullanıcı isteğiyle kapalı: mesaj gönderilmez, bekçi yalnız eşin 'ac' mesajını bekler
   Bu klasör repo DIŞINDADIR; mesajlar repoya girmez.
 #>
 
@@ -28,8 +29,8 @@ $script:Profiller = @{
     kendi      = @{ saatlik_tavan = 60; azami_bayt = 65536; okuma_bayt = 16384; ek_azami_mb = 1024; ek_bekle_saniye = 30; bekle_azami_dakika = 55 }
     paylasilan = @{ saatlik_tavan = 20; azami_bayt = 65536; okuma_bayt = 16384; ek_azami_mb = 100;  ek_bekle_saniye = 30; bekle_azami_dakika = 55 }
 }
-$script:Profiller.kendi.gelen_saatlik_uyanma = 120;  $script:Profiller.kendi.ek_serbest_yol = 1
-$script:Profiller.paylasilan.gelen_saatlik_uyanma = 30; $script:Profiller.paylasilan.ek_serbest_yol = 0
+$script:Profiller.kendi.gelen_saatlik_uyanma = 120;  $script:Profiller.kendi.ek_serbest_yol = 1;  $script:Profiller.kendi.es_ac_kapat = 1
+$script:Profiller.paylasilan.gelen_saatlik_uyanma = 30; $script:Profiller.paylasilan.ek_serbest_yol = 0; $script:Profiller.paylasilan.es_ac_kapat = 0
 function Ayar-Yukle {
     $profil = 'kendi'
     $a = $null
@@ -177,6 +178,17 @@ function Es-Oku {
 }
 
 function Dur-Var { return (Test-Path (Kopru-Yol 'DUR')) }
+# KAPALI: kullanıcının açıp kapattığı anahtar (DUR'dan farkı: eşten gelen 'ac' mesajı açabilir; bekçi bu sırada yalnız 'ac' bekler).
+function Kapali-Var { return (Test-Path (Kopru-Yol 'KAPALI')) }
+# Aç/kapat kararının zamanı (UTC, ISO 8601). Eşten gelen aç/kapat yalnız yereldeki son karardan YENİYSE uygulanır:
+# böylece geç gelen eski bir 'kapat' köprüyü yeniden kapatmaz, iki taraf aynı anda karar verirse en son karar kazanır.
+function Karar-Oku {
+    $y = Kopru-Yol 'karar.txt'
+    $t = [datetime]::MinValue
+    if (Test-Path -LiteralPath $y) { [void][datetime]::TryParse(([string](Get-Content -LiteralPath $y -Raw)).Trim(), $script:Kultur, [System.Globalization.DateTimeStyles]::RoundtripKind, [ref]$t) }
+    return $t.ToUniversalTime()
+}
+function Karar-Yaz { param([datetime]$Zaman) Set-Content -LiteralPath (Kopru-Yol 'karar.txt') -Value $Zaman.ToUniversalTime().ToString('o', $script:Kultur) -Encoding UTF8 }
 
 # Dosya hâlâ yazılıyor mu? İki okuma arasında boyut değişmediyse ve sıfır değilse hazır.
 function Dosya-Hazir {

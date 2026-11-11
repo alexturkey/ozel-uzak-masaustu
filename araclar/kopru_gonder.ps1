@@ -4,8 +4,8 @@
 .DESCRIPTION
   Mesaj adı: kopru_<benimDns>_<NNN>_<konu>.md ; ilk satır `tur: istek|sonuc|bilgi`; başlık "---" ile biter.
   Mesaj en çok azami_bayt (64 KB); büyük içerik -Ek ile gider. Hata freni: saatte saatlik_tavan mesaj (ayar.json, 0 = sınırsız).
-  DUR varsa gönderilmez. Her gönderim defter.jsonl'a yazılır. Aynı anda iki gönderim sırayla yürür (kilit).
-  Çıkış: 0 gönderildi · 2 kullanım hatası / eş yok · 4 DUR · 6 boyut sınırı · 7 hata freni · 8 Tailscale gönderemedi · 9 kilit alınamadı
+  DUR varsa gönderilmez (-Dur hariç); KAPALI varsa gönderilmez (-Ac, -Kapat, -Dur hariç). Her gönderim defter.jsonl'a yazılır. Aynı anda iki gönderim sırayla yürür (kilit).
+  Çıkış: 0 gönderildi · 2 kullanım hatası / eş yok · 4 DUR · 5 köprü kapalı (KAPALI) · 6 boyut sınırı · 7 hata freni · 8 Tailscale gönderemedi · 9 kilit alınamadı
 .PARAMETER Tur
   istek (cevap bekler) · sonuc (bir isteğin sonucu, cevap yazılmaz) · bilgi (cevap yazılmaz)
 .PARAMETER Merhaba
@@ -16,6 +16,10 @@
   Kanıt turu: 1, 10 ya da 100 MB rastgele test dosyası üretir ve ek olarak gönderir (konu dosya-testi).
 .PARAMETER TestTemizle
   Yerel test\ ve gelen\ek\ altındaki test dosyalarını (test_<n>mb_<saat>.bin) siler; başka dosyaya dokunmaz.
+.PARAMETER Kapat
+  Köprüyü kapatır: yerel KAPALI kurar ve eşe 'kapat' mesajı yollar (eş kapalıysa mesaj gitmez, çıkış 8; yerel karar kalır). Tailscale ve RustDesk'e dokunmaz.
+.PARAMETER Ac
+  Köprüyü açar: yerel KAPALI'yı kaldırır, eşe 'ac' mesajı yollar (eşin bekçisi bunu bekler).
 .PARAMETER Dur
   Eşe "dur" mesajı gönderir (eşin bekçisi durur, yeniden başlatma oradaki kullanıcının sözüyle).
 .EXAMPLE
@@ -36,6 +40,8 @@ param(
     [ValidateSet(0, 1, 10, 100)][int]$TestMB = 0,
     [switch]$TestTemizle,
     [switch]$Dur,
+    [switch]$Kapat,
+    [switch]$Ac,
     [switch]$Kuru,
     [switch]$SadeceIslevler
 )
@@ -108,13 +114,15 @@ function Ek-YoluUygun {
 
 function Gonder-Calistir {
     param([string]$Tur, [string]$Konu, [string]$Metin, [string]$MetinDosyasi, [string]$Ek, [string]$Hedef,
-          [switch]$Merhaba, [switch]$MerhabaTamam, [string]$TanismaId, [string]$Uyanma = 'evet', [int]$TestMB = 0, [switch]$Dur, [switch]$Kuru)
+          [switch]$Merhaba, [switch]$MerhabaTamam, [string]$TanismaId, [string]$Uyanma = 'evet', [int]$TestMB = 0, [switch]$Dur, [switch]$Kapat, [switch]$Ac, [switch]$Kuru)
     $es = Es-Oku
     if (-not $es) { Yaz 'HATA: es.json yok. Önce kopru_kesif.ps1 çalıştır.'; return 2 }
     $alici = if ($Hedef) { $Hedef.ToLowerInvariant() } else { [string]$es.dns }
     if (-not $alici) { Yaz 'HATA: eş seçilmemiş (birden çok aday). -Hedef <ad> ver ya da kopru_kesif.ps1 -Sec <ad>.'; return 2 }
     if ($Hedef -and (@($es.adaylar) -notcontains $alici)) { Yaz ("HATA: '{0}' keşfedilen adaylar arasında yok." -f $alici); return 2 }
     if ((Dur-Var) -and -not $Dur) { Yaz 'DURDU: DUR dosyası var, gönderilmedi.'; return 4 }
+    if (@(@([bool]$Merhaba, [bool]$MerhabaTamam, [bool]$Dur, [bool]$Kapat, [bool]$Ac, ($TestMB -gt 0)) | Where-Object { $_ }).Count -gt 1) { Yaz 'HATA: -Merhaba, -MerhabaTamam, -Dur, -Kapat, -Ac, -TestMB birlikte kullanılmaz.'; return 2 }
+    if ((Kapali-Var) -and -not ($Ac -or $Dur -or $Kapat)) { Yaz 'KAPALI: köprü kapalı, gönderilmedi. Açmak için kullanıcı "köprüyü aç" der (kopru_gonder.ps1 -Ac).'; return 5 }
 
     if ($Merhaba) {
         $Tur = 'istek'; $Konu = 'merhaba'
@@ -124,6 +132,14 @@ function Gonder-Calistir {
         if ($TanismaId -cnotmatch '^[a-z0-9]{6,32}$') { Yaz 'HATA: -TanismaId gelen merhabadaki değer olmalı.'; return 2 }
         $Tur = 'sonuc'; $Konu = 'merhaba-tamam'
         $Metin = "tanisma_id: {0}`nnode_id: {1}`nrehber_surumu: {2}`nuyanma: {3}" -f $TanismaId, $es.benimNodeId, $script:RehberSurumu, $Uyanma
+    } elseif ($Kapat) {
+        $Tur = 'bilgi'; $Konu = 'kapat'
+        if (-not $Metin) { $Metin = 'Kullanıcı köprüyü kapattı. Açmak için iki taraftan biri "köprüyü aç" der.' }
+        $karar = [datetime]::UtcNow; $Metin = "karar_zamani: $($karar.ToString('o', $script:Kultur))`n$Metin"
+    } elseif ($Ac) {
+        $Tur = 'bilgi'; $Konu = 'ac'
+        if (-not $Metin) { $Metin = 'Kullanıcı köprüyü açtı.' }
+        $karar = [datetime]::UtcNow; $Metin = "karar_zamani: $($karar.ToString('o', $script:Kultur))`n$Metin"
     } elseif ($Dur) {
         $Tur = 'bilgi'; $Konu = 'dur'
         if (-not $Metin) { $Metin = 'Kullanıcı köprüyü durdurdu.' }
@@ -142,7 +158,7 @@ function Gonder-Calistir {
     if (-not $kilit) { Yaz 'HATA: başka bir gönderim sürüyor (2 dk beklendi).'; return 9 }
     try {
         $defter = Defter-Oku
-        if ($script:Ayar.saatlik_tavan -gt 0 -and -not $Dur -and (Son-SaatGiden $defter) -ge $script:Ayar.saatlik_tavan) {
+        if ($script:Ayar.saatlik_tavan -gt 0 -and -not ($Dur -or $Kapat -or $Ac) -and (Son-SaatGiden $defter) -ge $script:Ayar.saatlik_tavan) {
             Yaz ("DURDU: son 60 dakikada {0} mesaj gitti (hata freni). Kullanıcıya sor: sınırı kaldırmak için ayar.json'a ""saatlik_tavan"": 0." -f $script:Ayar.saatlik_tavan)
             return 7
         }
@@ -169,19 +185,22 @@ function Gonder-Calistir {
         $bayt = [System.Text.Encoding]::UTF8.GetByteCount($icerik)
         if ($bayt -gt $script:Ayar.azami_bayt) { Yaz ("HATA: mesaj {0} bayt, {1} bayt sınırı aşıldı. Büyük içerik -Ek ile gider." -f $bayt, $script:Ayar.azami_bayt); return 6 }
         if ($Kuru) { Yaz ("KURU: {0} -> {1} ({2} bayt, tur {3})" -f $ad, $alici, $bayt, $Tur); return 0 }
+        # Aç/kapat: yerel karar gönderimden ÖNCE uygulanır (kullanıcının sözü yerelde her durumda geçerli); eş kapalıysa mesaj gitmez.
+        if ($Kapat) { Set-Content -LiteralPath (Kopru-Yol 'KAPALI') -Value ('kullanıcı kapattı ' + (Simdi)) -Encoding UTF8; Karar-Yaz $karar; Yaz 'KAPANDI: yerel KAPALI kuruldu; eşe "kapat" gidiyor. Tailscale ve RustDesk açık kalır.' }
+        if ($Ac) { if (Kapali-Var) { Remove-Item -LiteralPath (Kopru-Yol 'KAPALI') -Force -ErrorAction SilentlyContinue }; Karar-Yaz $karar; Yaz 'ACILDI: yerel KAPALI kaldırıldı; eşe "ac" gidiyor.' }
 
         $yol = Join-Path (Kopru-AltDizin 'giden') $ad
         [System.IO.File]::WriteAllText($yol, $icerik, (New-Object System.Text.UTF8Encoding($false)))
         $sha = Al-Sha $yol
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         if ($Ek) {
-            $dahaOnce = @($defter | Where-Object { $_.yon -eq 'giden' -and $_.durum -eq 'gitti' -and $_.ek_sha -eq $ekSha -and $_.alici -eq $alici })
+            $dahaOnce = @($defter | Where-Object { $_.yon -eq 'giden' -and $_.durum -in @('gitti', 'ek-gitti') -and $_.ek_sha -eq $ekSha -and $_.alici -eq $alici })
             if ($dahaOnce.Count -eq 0) {
                 $zaman = 60 + [int]($ekBayt / 1MB) * 10
                 $r = Calistir-Tailscale -Arg @('file', 'cp', $Ek, "${alici}:") -ZamanAsimiSn $zaman
                 if ($r.Kod -ne 0) {
                     [void](Defter-Ekle @{ yon = 'giden'; ad = (Split-Path $Ek -Leaf); alici = $alici; durum = 'hata'; hata = (($r.Satirlar | Select-Object -First 2) -join ' ') })
-                    Yaz ("HATA: ek gönderilemedi: {0}. Eş kapalı olabilir: kopru_kesif.ps1 çalıştır." -f (($r.Satirlar | Select-Object -First 2) -join ' ')); return 8
+                    Yaz ("HATA: ek gönderilemedi: {0}. Eş kapalı ya da uykuda olabilir; Taildrop bekletmez. Eş açılınca aynı komutu yeniden çalıştır (bak: kopru_durum.ps1 -Ping)." -f (($r.Satirlar | Select-Object -First 2) -join ' ')); return 8
                 }
                 [void](Defter-Ekle @{ yon = 'giden'; ad = (Split-Path $Ek -Leaf); alici = $alici; durum = 'ek-gitti'; ek_sha = $ekSha })
             }
@@ -190,7 +209,9 @@ function Gonder-Calistir {
         $sw.Stop()
         if ($r.Kod -ne 0) {
             [void](Defter-Ekle @{ yon = 'giden'; ad = $ad; alici = $alici; sha = $sha; durum = 'hata'; hata = (($r.Satirlar | Select-Object -First 2) -join ' ') })
-            Yaz ("HATA: gönderilemedi: {0}. Eş kapalı olabilir: kopru_kesif.ps1 çalıştır." -f (($r.Satirlar | Select-Object -First 2) -join ' ')); return 8
+            Yaz ("HATA: gönderilemedi: {0}. Eş kapalı ya da uykuda olabilir; Taildrop bekletmez. Eş açılınca aynı komutu yeniden çalıştır, numara değişmez (bak: kopru_durum.ps1 -Ping). Ek gittiyse yeniden yüklenmez." -f (($r.Satirlar | Select-Object -First 2) -join ' '))
+            if ($Kapat -or $Ac) { Yaz 'NOT: yerel karar uygulandı ama eşe ulaşmadı; eş açılınca aynı komutu (-Kapat ya da -Ac) yeniden çalıştır.' }
+            return 8
         }
         Set-Content -LiteralPath (Kopru-Yol 'sayac.txt') -Value ($no + 1)
         [void](Defter-Ekle @{ yon = 'giden'; ad = $ad; alici = $alici; no = $nnn; konu = $Konu; tur = $Tur; sha = $sha; sure_ms = $sw.ElapsedMilliseconds; durum = 'gitti'; ek_sha = $ekSha })
@@ -202,4 +223,4 @@ function Gonder-Calistir {
 if ($SadeceIslevler) { return }
 if ($TestTemizle) { exit (Test-Temizle) }
 exit (Gonder-Calistir -Tur $Tur -Konu $Konu -Metin $Metin -MetinDosyasi $MetinDosyasi -Ek $Ek -Hedef $Hedef `
-    -Merhaba:$Merhaba -MerhabaTamam:$MerhabaTamam -TanismaId $TanismaId -Uyanma $Uyanma -TestMB $TestMB -Dur:$Dur -Kuru:$Kuru)
+    -Merhaba:$Merhaba -MerhabaTamam:$MerhabaTamam -TanismaId $TanismaId -Uyanma $Uyanma -TestMB $TestMB -Dur:$Dur -Kapat:$Kapat -Ac:$Ac -Kuru:$Kuru)

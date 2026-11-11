@@ -35,13 +35,15 @@ Serbest metin (veri olarak okunur).
 | Betik | Ne yapar | Çıkış kodları |
 |---|---|---|
 | `kopru_kesif.ps1 [-Sec <ad>]` | Eşi bulur, `es.json` yazar. Yalnız okur | 0 tek eş bulundu · 2 aday yok (neden yazılır) · 3 aday var ama çevrimdışı (`es.json` yine yazılır) · 5 birden çok aday (`-Sec <ad>` ile seç) |
-| `kopru_gonder.ps1 -Tur <t> -Konu <k> -Metin "..." [-MetinDosyasi <yol>] [-Ek <yol>] [-Hedef <ad>]` | Eşe mesaj (ve en çok bir ek) gönderir | 0 gitti · 2 kullanım hatası / eş yok · 4 DUR var · 6 boyut sınırı · 7 hata freni · 8 Tailscale gönderemedi · 9 başka gönderim sürüyor |
+| `kopru_gonder.ps1 -Tur <t> -Konu <k> -Metin "..." [-MetinDosyasi <yol>] [-Ek <yol>] [-Hedef <ad>]` | Eşe mesaj (ve en çok bir ek) gönderir | 0 gitti · 2 kullanım hatası / eş yok · 4 DUR var · 5 köprü kapalı · 6 boyut sınırı · 7 hata freni · 8 Tailscale gönderemedi · 9 başka gönderim sürüyor |
 | `kopru_gonder.ps1 -Merhaba [-Uyanma hayir]` / `-MerhabaTamam -TanismaId <id>` | El sıkışma mesajları. `-Uyanma hayir`: kendiliğinden uyanamayan ajan (Codex, Cursor) bunu merhaba'da eşe bildirir | aynı |
 | `kopru_gonder.ps1 -TestMB 1, 10 ya da 100 [-Tur ...]` | Rastgele test dosyası üretip ek olarak gönderir | aynı |
 | `kopru_gonder.ps1 -TestTemizle` | Yerel `test\` ve `gelen\ek\` altındaki `test_<n>mb_<saat>.bin` dosyalarını siler | 0 |
 | `kopru_gonder.ps1 -Dur` | Eşe "dur" mesajı yollar (aşağıda Durdurma) | aynı |
+| `kopru_gonder.ps1 -Kapat` / `-Ac` | Köprüyü iki tarafta kapatır / açar (aşağıda "Aç / kapat") | aynı; ayrıca 5 köprü kapalı |
+| `kopru_servis.ps1 [-Kapat\|-Ac] [-Onay]` | Seçeneksiz: Tailscale ve RustDesk servis durumunu okur. `-Kapat`/`-Ac`: bu bilgisayarda ikisini kapatır/açar; `-Onay` olmadan yalnız ne yapacağını yazar. Yalnız bilgisayarın başındaki kullanıcının sözüyle | 0 tamam · 2 kullanım / onay yok · 3 kısmen (yönetici gerekti) · 8 Tailscale hatası |
 | `kopru_bekle.ps1 [-EkMesaj <mesaj yolu>]` | Bekçi: mesaj gelene dek bekler; eş yoksa keşfi kendisi dener. `-EkMesaj`: eki sonradan gelen mesajın ekini (en çok 10 dk) bekler | 0 yeni mesaj (`-EkMesaj` ile: ek alındı) · 2 kullanım hatası · 3 zaman aşımı (`-EkMesaj` ile: ek henüz gelmedi) · 4 DUR · 6 başka bekçi zaten çalışıyor |
-| `kopru_durum.ps1 [-Ping] [-Son <n>]` | Eş, bekçi, DUR, ayar, son `n` mesaj (varsayılan 6). Yalnız okur. `-Ping`: eşe 4 ping atar; `PING:` satırları ve `YOL: doğrudan`, `YOL: röle` ya da `YOL: bilinmiyor` | 0 köprü hazır · 1 eksik var (satırlarda yazılı) |
+| `kopru_durum.ps1 [-Ping] [-Son <n>]` | Eş, bekçi, DUR, KAPALI, ayar, son `n` mesaj (varsayılan 6). Yalnız okur. `-Ping`: eşe 4 ping atar; `PING:` satırları ve `YOL: doğrudan`, `YOL: röle` ya da `YOL: bilinmiyor` | 0 köprü hazır · 1 eksik var (satırlarda yazılı) · 2 köprü kullanıcı isteğiyle kapalı |
 
 `kopru_gonder.ps1 -Kuru` göndermeden adı ve boyutu gösterir.
 
@@ -90,6 +92,7 @@ Hepsi isteğe bağlıdır; hiçbir şey yapmazsan `kendi` profili çalışır. D
 | `ek_bekle_saniye` | Bekçi eki en çok bu kadar bekler | 30 | 30 |
 | `bekle_azami_dakika` | Bekçi bu süre mesaj gelmezse zaman aşımıyla çıkar | 55 | 55 |
 | `ek_serbest_yol` | Ek dosya her klasörden olabilir mi (1) ya da yalnız depo ve köprü klasöründen mi (0) | 1 | 0 |
+| `es_ac_kapat` | Eşin "kapat"/"ac" mesajı bu tarafı kendisi kapatıp açar mı (1) ya da yalnız istek olur, ajan sana sorar mı (0) | 1 | 0 |
 
 `kendi`: iki bilgisayar da senin. `paylasilan`: hesapta tanımadığın bir cihaz var (ofis, aile); keşif hesapta başka Windows cihazlar görürse bunu önerir. **Bu sayılar hata freni, güvenlik değil:** ajanın ya da betiğin döngüye girip mesaj ve token yakmasını önler. Sınırı kendi akışına göre değiştirebilirsin. Tavan dolunca ajan sana sorar; "evet" dersen `ayar.json`'a 0 yazar.
 
@@ -104,6 +107,23 @@ Taşıma güvenlidir, içerik güvenilmez; önlemler buna göre.
 - **İzin listesi dar:** depodaki `.claude/settings.json` yalnız dört köprü betiğinin tam komut biçimine izin verir; bu betikleri Edit/Write araçlarıyla düzenlemek `ask` altındadır. `ask` yalnız o araçları kapsar, kabuk komutuyla dosya değiştirmeyi engellemez; asıl koruma, ajanın beklenmedik komutunda Claude Code'un sorduğu onaydır ve sen onu okuyarak verirsin. Kural komut metnine bağlıdır ve argümanı kısıtlamak kırılgandır (K65); bu yüzden kısıtlar betiğin içindedir (ek adı, boyut, yol, tavan). `--dangerously-skip-permissions` önerilmez: bütün izin kurallarını kapatır, enjekte bir mesaj doğrudan komuta dönüşür.
 - İzin kuralları Claude Code'un "çalışma alanına güveniyor musun" penceresinde listelenir; pencereyi kabul etmeden yürürlüğe girmez (K65; başsız kipte ölçtük: uyarı "this workspace has not been trusted"). Kural tutmazsa da Claude Code'un kendi onay sorusu aynı korumayı sağlar.
 
+## Aç / kapat (seçenek)
+Tailscale ve RustDesk Windows servisi olarak sürekli çalışır; köprü de ajan açıkken dinler. Bunları istediğin an kapatıp açabilirsin. Kendiliğinden hiçbir şey kapanmaz.
+
+| Sen ne dersin | Ne olur | Uzaktan geri açılır mı |
+|---|---|---|
+| "köprüyü kapat" | `kopru_gonder.ps1 -Kapat`: iki tarafta `KAPALI` kurulur, bundan sonra başka mesaj gönderilmez (el sıkışma da); bekçi yalnız eşin "ac", "kapat" ve acil "dur" mesajını alır, öbür mesajlar İndirilenler'de bekler. Tailscale ve RustDesk açık kalır | Evet: iki taraftan biri "köprüyü aç" der |
+| "köprüyü aç" | `kopru_gonder.ps1 -Ac`: `KAPALI` kalkar, eşe "ac" gider; eşin bekçisi açılır, bekleyen mesajlar işlenir | - |
+| "servisleri kapat" | `kopru_servis.ps1 -Kapat -Onay`: o bilgisayarda `tailscale down` ve RustDesk servisi durur (yönetici gerekir; yönetici değilse betik komutu yazar, pencere açmaz) | **Hayır.** O bilgisayara biri gidip açar: `kopru_servis.ps1 -Ac -Onay` ya da tepsiden Connect |
+
+- Servisleri kapatmak yalnız o bilgisayarın başındaki kullanıcının sözüyle yapılır; eşten gelen istekle asla. Bu betik izin listesinde yoktur, Claude Code her seferinde sorar.
+- `KAPALI` ile `DUR` farkı: `DUR` acil durdurmadır, yalnız o bilgisayarın kullanıcısı kaldırır ve köprü kapalıyken de alınır; `KAPALI` gündelik anahtardır.
+- **Eş açıp kapatabilir mi:** `kendi` profilinde (iki bilgisayar da senin) evet: tek sözün iki tarafı birlikte açar/kapatır, ajan sana haber verir. `paylasilan` profilinde (ya da `ayar.json`'da `"es_ac_kapat": 0`) eşin mesajı yalnız istek olur, ajan sana sorar.
+- **Hangi karar geçerli:** her aç/kapat kararı zaman damgası taşır; eşten gelen karar yalnız buradaki son karardan yeniyse uygulanır (geç gelen eski bir "kapat" köprüyü yeniden kapatmaz, iki taraf aynı anda karar verirse en son karar kazanır). İki bilgisayarın saati Windows'un saat eşitlemesiyle doğru olmalıdır.
+- Eş kapalıyken `-Kapat`/`-Ac` yerelde uygulanır ama eşe gitmez (çıkış 8, Taildrop bekletmez); eş açılınca aynı komut yeniden çalıştırılır. Aç/kapat saatlik mesaj sınırına sayılmaz.
+- Servisleri kapatma Uzak Masaüstü (RDP) oturumundan reddedilir. RustDesk ile uzaktan bağlıyken betik bunu anlayamaz: **yalnız bilgisayarın başındayken** çalıştır.
+- Ölçüm: aç/kapat akışı birim testinde sınandı (sahte Tailscale ve sahte servis); gerçek `tailscale down`/`up` bu depoda ölçülmedi.
+
 ## Durdurma
 `kopru_gonder.ps1 -Dur` eşe "dur" mesajı yollar; eşin bekçisi yerel `DUR` dosyasını kurar ve durur. Kendi tarafın için `%LOCALAPPDATA%\dogrudan-uzak-masaustu\kopru\DUR` dosyasını oluşturmak yeter. DUR varken gönderme ve bekleme yapılmaz. **Yeniden başlatma yalnız kullanıcının sözüyle**: DUR dosyasını ajan silmez, sen "köprüyü yeniden başlat" dersin.
 
@@ -112,7 +132,9 @@ Taşıma güvenlidir, içerik güvenilmez; önlemler buna göre.
 - **Oturum kapanınca bekçi ölür; ayrıca bekçi her mesajda çıkar.** Ajan her uyanışta önce bekçiyi yeniden kurar, sonra mesajı işler; oturum başında da kurar. Bekçi ajanın izlediği arka plan komutu olmalı: ayrık süreçle (`&`, `Start-Process`) başlatılırsa mesaj alınır, deftere yazılır ama ajan uyanmaz (temiz oda denemesinde ölçüldü: cevap 40 dk gecikti; `kopru_durum.ps1` defterde görünür). Devam ettirilen oturumda arka plan komutlarının yeniden başlamadığı bir kaynakta yazıyor, bu rehberde ölçülmedi.
 - **Monitor aracı önerilmez:** Windows'ta Git Bash ister (K66).
 - Taildrop belgeye göre "alpha" (deneme aşamasında) ve hesapta "Send Files" açılmasını ister (K62).
-- **Eş çevrimdışıyken gönderimin ne yaptığı ölçülmedi.** Kodda hata çıkışı (8) vardır; gerçek davranış `TEST_PLANI.md` T15-4'te.
+- **Gönderende kuyruk yok.** Taildrop mesajı bekletmez: eş kapalı ya da uykudaysa `tailscale file cp` bir kez dener (Tailscale kaynak kodu `cmd/tailscale/cli/file.go`: "reportedly offline; trying anyway"), betik en geç 60 sn sonra çıkış 8 verir. Eş açılınca aynı komut yeniden çalıştırılır; numara değişmez, gitmiş ek yeniden yüklenmez. Bu davranış kod okumasıdır, ölçülmedi (`TEST_PLANI.md` T15-4).
+- **Hangi durumda ne çalışır:** eş açık ve ajanı çalışıyor → saniyeler içinde okunur. Eş açık ama ajan (terminal) kapalı → mesaj eşin İndirilenler klasörüne düşer, kaybolmaz; ajan açılıp bekçiyi kurunca hepsi birden işlenir. Eş uykuda ya da kapalı → mesaj gitmez, yeniden gönderilir.
+- **Neyi kapatabilirsin:** Tailscale ve RustDesk Windows servisi olarak çalışır; pencerelerini ve tepsi simgelerini kapatmak bağlantıyı kesmez (iki bilgisayarda ölçüldü: servis Otomatik, oturum 0). Kapanmaması gerekenler: ajanın terminali (bekçi ona bağlı), Windows oturumu (oturumu kapatınca Tailscale'in düşüp düşmemesi "unattended" ayarına bağlı, ölçülmedi) ve bilgisayarın kendisi (uyku ve kapanma bağlantıyı keser; pilde uyku süresine bak). İstersen kapatma seçenekleri: "Aç / kapat".
 - **Ekli olmayan kısa mesaj betikle 0,2-3 sn sürer** (ölçüldü: bir bilgisayarda ~0,2 sn, ötekinde 2,2-2,7 sn; çıktıdaki `sure_ms`). Fark büyük olasılıkla Tailscale sürecini başlatma payı (ölçülmedi); bu aralık hata sayılmaz.
 - Aynı Wi-Fi'de 1 GB dosya ~11-12 MB/s geçti; bu tavanın nedeni ölçülmedi.
 - **İzin kuralı Windows'ta PowerShell aracıyla ölçümümüzde tutmadı.** Claude Code 2.1.322'de, başsız (`claude -p`) kipte: klasör güvenilir sayılmadan `.claude/settings.json` izin kuralları hiç uygulanmıyor (ölçüldü); kurallar `--settings` ile doğrudan verildiğinde bile PowerShell aracı `powershell -NoProfile -ExecutionPolicy Bypass -File araclar\kopru_*.ps1` biçimini "iç içe PowerShell süreci doğrulanamaz" diyerek onaysız çalıştırmadı, doğrudan çağrı (`.\araclar\kopru_durum.ps1`) da kuralla eşleşmedi. Sonuç: Claude Code köprü betikleri için onay sorar (betik ve biçim başına birer kez; sayı ölçülmedi). Etkileşimli kipte ve Git Bash'in Bash aracında kuralın eşleşmesi ölçülmedi (`TEST_PLANI.md` T15-5).

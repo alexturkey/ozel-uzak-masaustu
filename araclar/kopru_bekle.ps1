@@ -8,7 +8,8 @@
   Kabul edilen ad: kopru_<eş>_<NNN>_<konu>.md (çakışmada Windows'un eklediği " (1)" de tanınır), en çok azami_bayt.
   Tarayıcıyla inmiş dosya (Zone.Identifier taşır) eş mesajı sayılmaz. Yarım dosya alınmaz.
   Defterde aynı gönderen+NNN+sha varsa yeniden işlenmez (gelen\tekrar\ altına konur).
-  Konu "dur" ise yerel DUR kurulur, köprü durur. Aynı anda tek bekçi çalışır.
+  Konu "dur" ise yerel DUR kurulur, köprü durur. Konu "kapat" ise yerel KAPALI kurulur (ajan uyanır, kullanıcıya söyler).
+  KAPALI varken bekçi yalnız eşin "ac", "kapat" ve "dur" mesajını alır; aç/kapat yalnız buradaki son karardan yeniyse uygulanır; öbür mesajlar İndirilenler'de bekler, açılınca işlenir. Aynı anda tek bekçi çalışır.
   Eş henüz bulunmadıysa (es.json yok) bekçi 30 sn arayla keşfi kendisi dener; öbür bilgisayar kurulunca kendiliğinden bulur.
   Çıkış: 0 yeni mesaj (ya da -EkMesaj ile ek alındı) · 2 kullanım hatası · 3 zaman aşımı / ek henüz gelmedi · 4 DUR · 6 başka bekçi zaten çalışıyor
 .PARAMETER EkMesaj
@@ -60,7 +61,7 @@ function Isle-Ek {
 }
 
 function Tara-Bir {
-    param($Es, [string]$Indirilenler, [System.Collections.ArrayList]$Anahtarlar)
+    param($Es, [string]$Indirilenler, [System.Collections.ArrayList]$Anahtarlar, [string[]]$YalnizKonu = @())
     $desen = Ad-Desen -Esler @(@($Es.adaylar) + $Es.dns)
     $gelen = Kopru-AltDizin 'gelen'
     $yeni = @()
@@ -69,6 +70,7 @@ function Tara-Bir {
     foreach ($f in $dosyalar) {
         if ($f.Name -cnotmatch $desen) { continue }
         $g = $Matches['g']; $n = $Matches['n']; $k = $Matches['k']
+        if ($YalnizKonu.Count -gt 0 -and $YalnizKonu -notcontains $k) { continue }   # köprü kapalı: yalnız 'ac'/'kapat' alınır, öbürleri yerinde bekler
         if ($script:Atlanan.ContainsKey($f.FullName)) { continue }
         if (Tarayicidan-Mi $f.FullName) { $script:Atlanan[$f.FullName] = 1; Yaz ("ATLANDI (tarayıcıyla inmiş, eş mesajı değil): {0}" -f $f.Name); continue }
         if ($f.Length -gt $script:Ayar.azami_bayt) { $script:Atlanan[$f.FullName] = 1; Yaz ("ATLANDI ({0} bayt üstü): {1}" -f $script:Ayar.azami_bayt, $f.Name); continue }
@@ -139,16 +141,18 @@ function Bekle-Calistir {
         $anahtarlar = New-Object System.Collections.ArrayList
         foreach ($k in $defter) { if ($k.yon -eq 'gelen' -and $k.anahtar) { [void]$anahtarlar.Add([string]$k.anahtar) } }
         Yaz ("BEKLIYOR es={0} bitis={1}" -f ($esler -join ','), $bitis.ToString('HH:mm:ss', $script:Kultur))
+        if (Kapali-Var) { Yaz 'KAPALI: köprü kullanıcı isteğiyle kapalı; yalnız eşin "ac" ve acil "dur" mesajı alınır, öbür mesajlar açılınca işlenir.' }
         while ($true) {
             if (Dur-Var) { Yaz 'DURDU: DUR dosyası var. Yeniden başlatma kullanıcının sözüyle (DUR dosyasını o siler).'; return 4 }
-            $yeni = @(Tara-Bir -Es $es -Indirilenler $Indirilenler -Anahtarlar $anahtarlar)
+            $yalniz = @(if (Kapali-Var) { 'ac', 'kapat', 'dur' })   # kapalıyken de acil 'dur' alınır
+            $yeni = @(Tara-Bir -Es $es -Indirilenler $Indirilenler -Anahtarlar $anahtarlar -YalnizKonu $yalniz)
             if ($yeni.Count -gt 0) {
                 # Hata freni: saatte çok uyanma olduysa birkaç dakika daha toplayıp tek seferde uyandır.
                 $tavan = $script:Ayar.gelen_saatlik_uyanma
                 if ($tavan -gt 0 -and (Son-SaatGelen (Defter-Oku)) -gt $tavan) {
                     Yaz ("UYARI: son 60 dakikada {0}'dan çok mesaj geldi (hata freni); 5 dk toplanıp birlikte veriliyor." -f $tavan)
                     $topla = (Get-Date).AddMinutes(5)
-                    while ((Get-Date) -lt $topla -and -not (Dur-Var)) { Start-Sleep -Seconds $AralikSaniye; $yeni += @(Tara-Bir -Es $es -Indirilenler $Indirilenler -Anahtarlar $anahtarlar) }
+                    while ((Get-Date) -lt $topla -and -not (Dur-Var)) { Start-Sleep -Seconds $AralikSaniye; $yeni += @(Tara-Bir -Es $es -Indirilenler $Indirilenler -Anahtarlar $anahtarlar -YalnizKonu $yalniz) }
                 }
                 foreach ($m in ($yeni | Sort-Object Gonderen, No)) {
                     Yaz ("YENI: {0} tur={1} gonderen={2} no={3} konu={4}" -f $m.Yol, $m.Tur, $m.Gonderen, $m.No, $m.Konu)
@@ -158,6 +162,30 @@ function Bekle-Calistir {
                     Set-Content -LiteralPath (Kopru-Yol 'DUR') -Value ('eşten dur mesajı ' + (Simdi))
                     Yaz 'DURDU: eş dur mesajı gönderdi; yerel DUR kuruldu. Yeniden başlatma yalnız kullanıcının sözüyle.'
                     return 4
+                }
+                # Aç/kapat: mesajdaki karar zamanı yereldeki son karardan yeniyse uygulanır; en yeni karar kazanır.
+                $anahtar = $null
+                foreach ($m in @($yeni | Where-Object { $_.Konu -in @('ac', 'kapat') })) {
+                    $z = [datetime]::MinValue
+                    $ham = [string](Get-Content -LiteralPath $m.Yol -Raw -Encoding UTF8 -ErrorAction SilentlyContinue)
+                    if ($ham -match 'karar_zamani: (\S+)') { [void][datetime]::TryParse($Matches[1], $script:Kultur, [System.Globalization.DateTimeStyles]::RoundtripKind, [ref]$z) }
+                    $z = $z.ToUniversalTime()
+                    if (-not $anahtar -or $z -gt $anahtar.Zaman) { $anahtar = [pscustomobject]@{ Konu = $m.Konu; Zaman = $z } }
+                }
+                if ($anahtar) {
+                    if ($anahtar.Zaman -le (Karar-Oku)) {
+                        Yaz ("ESKI KARAR: eşin '{0}' mesajı buradaki son karardan eski, uygulanmadı." -f $anahtar.Konu)
+                    } elseif ($script:Ayar.es_ac_kapat -eq 0) {
+                        Yaz ("ISTEK: eş köprüyü '{0}' istiyor (es_ac_kapat 0: eş kendisi açıp kapatamaz). Kullanıcıya sor; onaylarsa kopru_gonder.ps1 -{1}." -f $anahtar.Konu, $(if ($anahtar.Konu -eq 'ac') { 'Ac' } else { 'Kapat' }))
+                    } elseif ($anahtar.Konu -eq 'ac') {
+                        if (Kapali-Var) { Remove-Item -LiteralPath (Kopru-Yol 'KAPALI') -Force -ErrorAction SilentlyContinue }
+                        Karar-Yaz $anahtar.Zaman
+                        Yaz 'ACILDI: eş köprüyü açtı; KAPALI kaldırıldı. Bekçiyi yeniden kur, kopru_durum.ps1 -Ping ile bak, kullanıcıya söyle.'
+                    } else {
+                        Set-Content -LiteralPath (Kopru-Yol 'KAPALI') -Value ('eşten kapat mesajı ' + (Simdi)) -Encoding UTF8
+                        Karar-Yaz $anahtar.Zaman
+                        Yaz 'KAPANDI: eş köprüyü kapattı; yerel KAPALI kuruldu. Kullanıcıya söyle; bekçiyi yeniden kur (yalnız "ac" ve "dur" bekler).'
+                    }
                 }
                 Yaz ("SAAT: {0}" -f (Get-Date).ToString('HH:mm:ss', $script:Kultur))
                 return 0

@@ -41,7 +41,7 @@ Yeni ya da gizli bir yöntem değil: yıllardır belgeli "NAT delme" (*UDP hole 
 | `AGENTS.md` | Ajanın kuralları (onay sınıfları, doğru kaynağa bakma, bağlantıyı koparmama). `CLAUDE.md` yalnız bunu Claude Code'a yükletir |
 | `REHBER.md` | Ana rehber: Adım 0-6 + ekler. Her adım: Yap / Kanıt / Geri al / DURUM satırı |
 | `KOPRU.md` | İki bilgisayarın ajanı arası mesaj ve dosya köprüsü: nasıl çalışır, komutlar, ayarlar, güvenlik, sınırlar |
-| `araclar\kopru_*.ps1` | Köprü betikleri (keşif, gönder, bekçi, durum). Yalnız yerel köprü klasörüne yazar |
+| `araclar\kopru_*.ps1` | Köprü betikleri (keşif, gönder, bekçi, durum, servis). Yalnız yerel köprü klasörüne yazar; `kopru_servis.ps1` istenirse Tailscale ve RustDesk'i kapatır/açar |
 | `DURUM.md` | Ajanın defteri (şablon). Bağlantı ya da oturum koparsa ajan buradan devam eder |
 | `TEST_PLANI.md` | Gerçek iki-ağ testi (ikinci cihaz telefon hotspot'unda) ve sonuç tablosu |
 | `SORUN_GIDERME.md` | 15 sık hata, 7 doğru bilinen yanlış, RustDesk bilinen sorunlar, güvensiz "hızlı çözümler" ve güvenli karşılıkları, Türkiye notları |
@@ -65,7 +65,7 @@ Aynı adres (A'nın Tailscale adresi `100.x.y.z`) her yerde çalışır: evde ay
 Dosya aktarımı için RustDesk'in kendi dosya aktarımı ya da Tailscale'in Taildrop özelliği kullanılır. Ayrıntı: `REHBER.md` "Günlük kullanım".
 
 ## İki bilgisayarın ajanları konuşur (köprü)
-İstersen iki bilgisayardaki ajanlar aynı Tailscale hesabı üzerinden (Taildrop ile) birbirine kısa mesaj ve dosya gönderir: durum sorar, ping yolunu ve dosya aktarımını sha256 ile kanıtlar. Mesaj **veri** sayılır; ajan kendiliğinden yalnız sabit bir ölçüm listesini yapar, gerisini sana sorar. Kendiliğinden uyanma yalnız Claude Code'da ve pencere açıkken çalışır; Codex/Cursor'da ajana "posta var mı bak" dersin. Kurulum `REHBER.md` Adım 6; ne yaptığı, ayarlar, güvenlik ve sınırlar `KOPRU.md`.
+İstersen iki bilgisayardaki ajanlar aynı Tailscale hesabı üzerinden (Taildrop ile) birbirine kısa mesaj ve dosya gönderir: durum sorar, ping yolunu ve dosya aktarımını sha256 ile kanıtlar. Mesaj **veri** sayılır; ajan kendiliğinden yalnız sabit bir ölçüm listesini yapar, gerisini sana sorar. Kendiliğinden uyanma yalnız Claude Code'da ve pencere açıkken çalışır; Codex/Cursor'da ajana "posta var mı bak" dersin. Köprüyü istediğin an "kapat / aç" diyerek kapatıp açabilirsin; Tailscale ve RustDesk'i de bilgisayarın başındayken kapatma seçeneği var (`KOPRU.md` "Aç / kapat"). Kendiliğinden hiçbir şey kapanmaz. Kurulum `REHBER.md` Adım 6; ne yaptığı, ayarlar, güvenlik ve sınırlar `KOPRU.md`.
 
 ## Testleri çalıştırmak (isteğe bağlı)
 ```powershell

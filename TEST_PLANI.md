@@ -188,10 +188,11 @@ Süreyi kapatmak bir güvenlik ödünüdür; kullanıcı seçer.
 | T12 kontrol/kanıt betikleri (7 kontrol, 4 servis dahil) | kısmen (deneme 1) | kontrol.ps1 bilgisayar A'da çalıştı (Home, uyku kapalı, servisler tamam); kanıt betiği iki ağda "DOĞRUDAN" hükmü verdi; 7 kontrolün tamamı denenmedi |
 | T13 AGENTS.md/CLAUDE.md yükleniyor mu (Claude Code / Codex ZIP) | kısmen | Claude Code (geçici kopya klasörde, yalnız okuma kipi): kuralları kendiliğinden uyguladı (önce DURUM.md, sonra Adım 0'ın üç sorusu, hiçbir şey değiştirmedi); ilk cümle "Kuralları okudum" yazılmadı. İlk denemede şablondaki örnek DURUM satırını gerçek sandı; satır kaldırıldı, ikinci deneme temiz. Codex: bu makinedeki model ayarı hata verdi, denenmedi. Cursor: denenmedi |
 | T14 anahtar süresi seçimi | denenmedi | kapattı / hatırlatma tarihi: |
-| T15-1 köprü birim testi (`tests\test_kopru.ps1`) | geçti | 68/68, sahte Tailscale |
+| T15-1 köprü birim testi (`tests\test_kopru.ps1`) | geçti | 95/95, sahte Tailscale ve sahte servis (aç/kapat, karar zamanı, kapalıyken acil dur, servis seçeneği, ek yeniden yükleme dahil) |
+| T15-6 gerçek aç/kapat (`-Kapat`/`-Ac` iki bilgisayarda; `kopru_servis.ps1 -Kapat -Onay` başındayken) | ölçülmedi | servis kapatma ağ ayarıdır, kullanıcı onayıyla ve bilgisayarın başında denenecek |
 | T15-2 gerçek keşif | geçti | eş bulundu, çıkış 0 |
 | T15-3 temiz oda: el sıkışma + kanıt turu + kapanış | geçti (2026-11-11) | İkinci bilgisayardaki ajan yalnız REHBER Adım 6 ile tamamladı; 1 ve 10 MB iki yön sha256 eşit, iki tarafta "köprü hazır". Ders: ayrık başlatılan bekçi ajanı uyandırmadı (40 dk gecikme), KOPRU Sınırlar'a yazıldı. Bu denemede ikinci taraf izin atlama kipindeydi; 6b ayrı ölçülecek (T15-5) |
-| T15-4 eş çevrimdışıyken gönderim | ölçülmedi | kullanıcı onayıyla denenecek |
+| T15-4 eş çevrimdışıyken gönderim | ölçülmedi | Kod okuması (Tailscale cli/file.go): kuyruk yok, bir kez dener; betik çıkış 8. Kullanıcı onayıyla denenecek |
 | T15-5 izin kuralı Windows'ta eşleşiyor mu | kısmen: PowerShell aracında tutmadı; Bash aracında ölçülmedi | başsız kipte ölçüldü; güvensiz klasörde kurallar hiç uygulanmadı. Etkileşimli kip denenecek |
 
 Eksik tahmin: T3'te gecikme, "5 ms"yi **yerel ağda** ölçtük diye internetten bekleme; yol uzunluğuna bağlıdır (SORUN_GIDERME yanlış 3). Hissedilen gecikmeyi ayrıca not et: ekranda fareyi oynat, görüntünün ne kadar sonra geldiğini say.

@@ -18,7 +18,7 @@ New-Item -ItemType Directory -Path $indir -Force | Out-Null
 $araclar = Join-Path $PSScriptRoot '..\araclar'
 
 Write-Host '[1] Sözdizimi ve kodlama'
-foreach ($ad in 'kopru_ortak', 'kopru_kesif', 'kopru_gonder', 'kopru_bekle', 'kopru_durum') {
+foreach ($ad in 'kopru_ortak', 'kopru_kesif', 'kopru_gonder', 'kopru_bekle', 'kopru_durum', 'kopru_servis') {
     $b = Join-Path $araclar "$ad.ps1"
     $h = $null; $t = $null
     [void][System.Management.Automation.Language.Parser]::ParseFile($b, [ref]$t, [ref]$h)
@@ -31,19 +31,25 @@ foreach ($ad in 'kopru_ortak', 'kopru_kesif', 'kopru_gonder', 'kopru_bekle', 'ko
 . (Join-Path $araclar 'kopru_gonder.ps1') -SadeceIslevler
 . (Join-Path $araclar 'kopru_bekle.ps1') -SadeceIslevler
 . (Join-Path $araclar 'kopru_durum.ps1') -SadeceIslevler
+. (Join-Path $araclar 'kopru_servis.ps1') -SadeceIslevler
 
 # ---- Sahte Tailscale ----
 $script:SJson = ''
 $script:SVar = $true
 $script:SCpKod = 0
+$script:SCpMdKod = 0
 $script:SCp = New-Object System.Collections.ArrayList
+$script:SDiger = New-Object System.Collections.ArrayList
 function Calistir-Tailscale { param([string[]]$Arg, [int]$ZamanAsimiSn = 60)
     if (-not $script:SVar) { return [pscustomobject]@{ Kod = -1; Satirlar = @() } }
     if ($Arg[0] -eq 'status') { return [pscustomobject]@{ Kod = 0; Satirlar = @($script:SJson -split "`n") } }
     if ($Arg[0] -eq 'file' -and $Arg[1] -eq 'cp') {
         [void]$script:SCp.Add($Arg[2])
-        if ($script:SCpKod -eq 0) { Copy-Item -LiteralPath $Arg[2] -Destination $script:SAlici }
-        return [pscustomobject]@{ Kod = $script:SCpKod; Satirlar = @('sahte hata: no such peer') } }
+        $kod = $script:SCpKod
+        if ($kod -eq 0 -and $Arg[2] -like '*.md') { $kod = $script:SCpMdKod }
+        if ($kod -eq 0) { Copy-Item -LiteralPath $Arg[2] -Destination $script:SAlici }
+        return [pscustomobject]@{ Kod = $kod; Satirlar = @('sahte hata: no such peer') } }
+    [void]$script:SDiger.Add($Arg -join ' ')
     return [pscustomobject]@{ Kod = 0; Satirlar = @() }
 }
 function Durum-Json { param([object[]]$Esler, [string]$Backend = 'Running')
@@ -121,6 +127,12 @@ Dogrula 'test dosyası 1 MB ek ile: 0' ((Gonder-Calistir -TestMB 1) -eq 0 -and (
 $cpOnce = $script:SCp.Count
 $testDosya = @(Get-ChildItem (Kopru-Yol 'test'))[0].FullName
 Dogrula 'aynı ek ikinci kez gitmez, yalnız mesaj gider' ((Gonder-Calistir -Tur bilgi -Konu 'tekrar-ek' -Metin 'x' -Ek $testDosya) -eq 0 -and $script:SCp.Count -eq $cpOnce + 1)
+$ek2 = Join-Path $gecici 'ek_yarim.bin'
+[System.IO.File]::WriteAllBytes($ek2, [byte[]](1..200))
+$script:SCpMdKod = 1; $cpA = $script:SCp.Count; $script:Cikti.Clear()
+Dogrula 'ek gitti, mesaj düştü: 8 ve yeniden gönder denir' ((Gonder-Calistir -Tur bilgi -Konu 'yarim' -Metin 'x' -Ek $ek2) -eq 8 -and $script:SCp.Count -eq $cpA + 2 -and (Metin) -match 'yeniden çalıştır')
+$script:SCpMdKod = 0; $cpB = $script:SCp.Count
+Dogrula 'yeniden gönderimde ek tekrar yüklenmez' ((Gonder-Calistir -Tur bilgi -Konu 'yarim' -Metin 'x' -Ek $ek2) -eq 0 -and $script:SCp.Count -eq $cpB + 1)
 Dogrula 'ek adı kurala uymuyor: 2' ((Gonder-Calistir -Tur bilgi -Konu 'a' -Metin 'x' -Ek (Join-Path $gecici 'yok dosya.bin')) -eq 2)
 New-Item -ItemType Directory -Force -Path (Kopru-Yol 'gelen\ek') | Out-Null
 Set-Content (Join-Path (Kopru-Yol 'gelen\ek') 'test_1mb_123456.bin') 'x'
@@ -211,6 +223,83 @@ $script:SJson = Durum-Json -Esler @((Es 'ofis-pc'))
 Birak 'kopru_ofis-pc_010_merhaba.md' "tur: istek`n---`nmerhaba"
 $script:Cikti.Clear()
 Dogrula 'es.json yok, eş sonradan geldi: bekçi kendisi bulur ve mesajı alır' ((Bekle-Calistir -AzamiDakika 1 -AralikSaniye 1 -Indirilenler $indir -KesifAralikSaniye 1) -eq 0 -and (Metin) -match 'ES BULUNDU: ofis-pc' -and (Metin) -match '010_merhaba')
+
+Write-Host '[4b] Köprüyü kapat / aç'
+function KZ { param([int]$Dk) return [datetime]::UtcNow.AddMinutes($Dk).ToString('o') }
+Get-ChildItem $indir -File | Remove-Item
+Sifirla; $script:SJson = Durum-Json -Esler @((Es 'ofis-pc')); [void](Kesif-Calistir)
+$script:Cikti.Clear()
+Dogrula '-Kapat: 0, KAPALI kuruldu, karar zamanı yazıldı, eşe kapat gitti' ((Gonder-Calistir -Kapat) -eq 0 -and (Kapali-Var) -and (Karar-Oku) -gt [datetime]::MinValue -and (Get-Content (Join-Path $indir 'kopru_ben-pc_001_kapat.md') -Raw) -match 'karar_zamani: ')
+Remove-Item (Join-Path $indir 'kopru_ben-pc_001_kapat.md')
+$script:Cikti.Clear()
+Dogrula 'KAPALI varken normal gönderim: 5' ((Gonder-Calistir -Tur bilgi -Konu 'not' -Metin 'x') -eq 5 -and (Metin) -match 'köprüyü aç')
+Dogrula 'birbirini dışlayan seçenekler: 2' ((Gonder-Calistir -Kapat -Ac) -eq 2 -and (Gonder-Calistir -Merhaba -Kapat) -eq 2)
+$script:Cikti.Clear()
+Dogrula 'durum: köprü kapalı, çıkış 2' (((Durum-Calistir) -eq 2) -and (Metin) -match 'SONUC: köprü kapalı')
+Birak 'kopru_ofis-pc_001_ping.md' "tur: istek`n---`nölç"
+$script:Cikti.Clear()
+Dogrula 'KAPALI: bekçi normal mesajı almaz, zaman aşımı 3, mesaj yerinde' ((Bekle-Calistir -AzamiDakika 0 -AralikSaniye 1 -Indirilenler $indir) -eq 3 -and (Metin) -match 'KAPALI: köprü' -and (Test-Path (Join-Path $indir 'kopru_ofis-pc_001_ping.md')))
+Birak 'kopru_ofis-pc_002_ac.md' "tur: bilgi`n---`nkarar_zamani: $(KZ -10)`neski"
+$script:Cikti.Clear()
+Dogrula 'eski tarihli ac uygulanmaz (ESKI KARAR), kapalı kalır' ((Bekle-Calistir -AzamiDakika 1 -AralikSaniye 1 -Indirilenler $indir) -eq 0 -and (Metin) -match 'ESKI KARAR' -and (Kapali-Var))
+Birak 'kopru_ofis-pc_003_ac.md' "tur: bilgi`n---`nkarar_zamani: $(KZ 1)`naçtı"
+$script:Cikti.Clear()
+Dogrula 'yeni tarihli ac açar (ACILDI), ping henüz işlenmez' ((Bekle-Calistir -AzamiDakika 1 -AralikSaniye 1 -Indirilenler $indir) -eq 0 -and (Metin) -match 'ACILDI' -and -not (Kapali-Var) -and (Test-Path (Join-Path $indir 'kopru_ofis-pc_001_ping.md')))
+$script:Cikti.Clear()
+Dogrula 'açılınca bekleyen mesaj işlenir' ((Bekle-Calistir -AzamiDakika 1 -AralikSaniye 1 -Indirilenler $indir) -eq 0 -and (Metin) -match 'YENI: .*001_ping')
+Birak 'kopru_ofis-pc_004_kapat.md' "tur: bilgi`n---`nkarar_zamani: $(KZ -5)`ngeç gelen eski kapat"
+$script:Cikti.Clear()
+Dogrula 'geç gelen eski kapat açık köprüyü kapatmaz' ((Bekle-Calistir -AzamiDakika 1 -AralikSaniye 1 -Indirilenler $indir) -eq 0 -and (Metin) -match 'ESKI KARAR' -and -not (Kapali-Var))
+Birak 'kopru_ofis-pc_005_ac.md' "tur: bilgi`n---`nkarar_zamani: $(KZ 3)`na"
+Birak 'kopru_ofis-pc_006_kapat.md' "tur: bilgi`n---`nkarar_zamani: $(KZ 2)`nk"
+$script:Cikti.Clear()
+Dogrula 'aynı turda ac+kapat: zamanı en yeni olan (ac) geçerli, numara değil' ((Bekle-Calistir -AzamiDakika 1 -AralikSaniye 1 -Indirilenler $indir) -eq 0 -and -not (Kapali-Var) -and (Metin) -match 'ACILDI')
+Birak 'kopru_ofis-pc_007_kapat.md' "tur: bilgi`n---`nkarar_zamani: $(KZ 5)`nkapattı"
+$script:Cikti.Clear()
+Dogrula 'eşin yeni kapat mesajı: KAPANDI' ((Bekle-Calistir -AzamiDakika 1 -AralikSaniye 1 -Indirilenler $indir) -eq 0 -and (Metin) -match 'KAPANDI' -and (Kapali-Var))
+Birak 'kopru_ofis-pc_008_dur.md' "tur: bilgi`n---`ndur"
+$script:Cikti.Clear()
+Dogrula 'KAPALI varken acil dur alınır: 4, DUR kuruldu' ((Bekle-Calistir -AzamiDakika 1 -AralikSaniye 1 -Indirilenler $indir) -eq 4 -and (Dur-Var))
+Remove-Item (Kopru-Yol 'DUR')
+'{"es_ac_kapat": 0}' | Set-Content (Kopru-Yol 'ayar.json'); Ayar-Yukle
+Birak 'kopru_ofis-pc_009_ac.md' "tur: bilgi`n---`nkarar_zamani: $(KZ 10)`na"
+$script:Cikti.Clear()
+Dogrula 'es_ac_kapat 0: eşin ac mesajı yalnız ISTEK, kapalı kalır' ((Bekle-Calistir -AzamiDakika 1 -AralikSaniye 1 -Indirilenler $indir) -eq 0 -and (Metin) -match 'ISTEK: eş köprüyü .ac.' -and (Kapali-Var))
+Remove-Item (Kopru-Yol 'ayar.json'); Ayar-Yukle
+$script:SCpKod = 1; $script:Cikti.Clear()
+Dogrula '-Ac eş kapalıyken: yerel açılır, 8, yeniden çalıştır notu' ((Gonder-Calistir -Ac) -eq 8 -and -not (Kapali-Var) -and (Metin) -match 'yerel karar uygulandı')
+$script:SCpKod = 0
+$script:Cikti.Clear()
+Dogrula '-Kapat -Kuru: KAPALI kurulmaz' ((Gonder-Calistir -Kapat -Kuru) -eq 0 -and -not (Kapali-Var))
+Get-ChildItem $indir -File -Filter 'kopru_ben-pc_*' | Remove-Item
+
+Write-Host '[4c] Servis seçeneği (sahte servis, gerçek servise dokunulmaz)'
+$script:SServis = @{}
+$script:SDurumS = @{}
+function Get-Service { param([string]$Name, $ErrorAction) $d = if ($script:SDurumS.ContainsKey($Name)) { $script:SDurumS[$Name] } else { 'Running' }; return [pscustomobject]@{ Name = $Name; Status = $d; StartType = 'Automatic' } }
+$script:SDurmaz = $false
+function Stop-Service { param([string]$Name, $ErrorAction) $script:SServis["dur:$Name"] = 1; if (-not $script:SDurmaz) { $script:SDurumS[$Name] = 'Stopped' } }
+function Start-Service { param([string]$Name, $ErrorAction) $script:SServis["bas:$Name"] = 1; $script:SDurumS[$Name] = 'Running' }
+$script:SYonetici = $false
+function Yonetici-Mi { return $script:SYonetici }
+$script:SDiger.Clear(); $script:Cikti.Clear()
+Dogrula 'seçeneksiz: yalnız durum, 0' ((Servis-Calistir) -eq 0 -and (Metin) -match 'TAILSCALE: servis Running' -and (Metin) -match 'RUSTDESK: servis Running' -and @($script:SDiger | Where-Object { $_ -in 'down', 'up' }).Count -eq 0)
+$script:Cikti.Clear()
+Dogrula '-Kapat onaysız: 2, hiçbir şey değişmez' ((Servis-Calistir -Kapat) -eq 2 -and (Metin) -match 'ONAY YOK' -and $script:SDiger -notcontains 'down' -and $script:SServis.Count -eq 0)
+$eskiOturum = $env:SESSIONNAME; $env:SESSIONNAME = 'RDP-Tcp#1'; $script:Cikti.Clear()
+Dogrula '-Kapat RDP oturumundan reddedilir: 2' ((Servis-Calistir -Kapat -Onay) -eq 2 -and (Metin) -match 'RED: ' -and $script:SDiger -notcontains 'down')
+$env:SESSIONNAME = $eskiOturum
+$script:Cikti.Clear()
+Dogrula '-Kapat -Onay, yönetici değil: down + nasıl yapılır yazılır, 3' ((Servis-Calistir -Kapat -Onay) -eq 3 -and $script:SDiger -contains 'down' -and (Metin) -match 'Yönetici olarak çalıştır' -and $script:SServis.Count -eq 0)
+$script:SYonetici = $true; $script:SDiger.Clear()
+Dogrula '-Kapat -Onay, yönetici: RustDesk durur ve doğrulanır, 0' ((Servis-Calistir -Kapat -Onay) -eq 0 -and $script:SServis['dur:RustDesk'] -eq 1 -and $script:SDurumS['RustDesk'] -eq 'Stopped')
+$script:Cikti.Clear()
+Dogrula '-Ac -Onay, yönetici: RustDesk başlar, up çalışır, 0' ((Servis-Calistir -Ac -Onay) -eq 0 -and $script:SServis['bas:RustDesk'] -eq 1 -and $script:SDiger -contains 'up' -and (Metin) -match 'servis başlatıldı')
+$script:SDurmaz = $true; $script:SDurumS['RustDesk'] = 'Running'; $script:Cikti.Clear()
+Dogrula 'servis durmazsa yalancı başarı yok: HATA, 3' ((Servis-Calistir -Kapat -Onay) -eq 3 -and (Metin) -match 'HATA: RustDesk servisi durmadı')
+$script:SDurmaz = $false
+Dogrula '-Kapat -Ac birlikte: 2' ((Servis-Calistir -Kapat -Ac -Onay) -eq 2)
+Remove-Item Function:\Get-Service, Function:\Stop-Service, Function:\Start-Service
 
 Write-Host '[5] Uçtan uca (sahte taşıma) ve durum'
 Get-ChildItem $indir -File | Remove-Item

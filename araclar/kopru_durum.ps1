@@ -4,7 +4,7 @@
 .DESCRIPTION
   Kapanış mesajının ve "köprü çalışıyor mu?" sorusunun tek komutu. Ağa bir şey göndermez;
   -Ping verilirse eşe 4 Tailscale ping'i atar ve yolu yazar (doğrudan / röle).
-  Çıkış: 0 köprü hazır (eş var, bekçi çalışıyor, DUR yok) · 1 eksik var (satırlarda yazılı)
+  Çıkış: 0 köprü hazır (eş var, bekçi çalışıyor, DUR ve KAPALI yok) · 1 eksik var (satırlarda yazılı) · 2 köprü kullanıcı isteğiyle kapalı
 .EXAMPLE
   powershell -NoProfile -ExecutionPolicy Bypass -File araclar\kopru_durum.ps1
 #>
@@ -21,6 +21,8 @@ function Durum-Calistir {
     if ($k) { Birak-Kilit $k; Yaz 'BEKCI: çalışmıyor (kopru_bekle.ps1 arka planda kurulmalı)'; $tamam = $false }
     else { Yaz 'BEKCI: çalışıyor' }
     if (Dur-Var) { Yaz 'DUR: VAR (köprü durdu; yeniden başlatma kullanıcının sözüyle)'; $tamam = $false } else { Yaz 'DUR: yok' }
+    $kapali = Kapali-Var
+    if ($kapali) { Yaz 'KAPALI: evet (kullanıcı isteğiyle; açmak: "köprüyü aç" = kopru_gonder.ps1 -Ac)'; $tamam = $false } else { Yaz 'KAPALI: hayır' }
     Yaz ("AYAR: profil {0} · saatlik_tavan {1} · gelen_saatlik_uyanma {2} · ek_azami_mb {3}" -f $script:Profil, $script:Ayar.saatlik_tavan, $script:Ayar.gelen_saatlik_uyanma, $script:Ayar.ek_azami_mb)
     $d = @(Defter-Oku)
     $giden = @($d | Where-Object { $_.yon -eq 'giden' -and $_.durum -eq 'gitti' }).Count
@@ -39,8 +41,8 @@ function Durum-Calistir {
         elseif ($pong[-1] -match 'via (\d{1,3}(\.\d{1,3}){3}|\[[0-9a-fA-F:]+\]):\d+ in') { Yaz 'YOL: doğrudan' }
         else { Yaz 'YOL: bilinmiyor (peer-relay ya da yeni bir biçim; satıra bak)' }
     }
-    Yaz $(if ($tamam) { 'SONUC: köprü hazır' } else { 'SONUC: eksik var (yukarıda)' })
-    if ($tamam) { return 0 } else { return 1 }
+    Yaz $(if ($tamam) { 'SONUC: köprü hazır' } elseif ($kapali) { 'SONUC: köprü kapalı (kullanıcı isteğiyle)' } else { 'SONUC: eksik var (yukarıda)' })
+    if ($tamam) { return 0 } elseif ($kapali) { return 2 } else { return 1 }
 }
 
 if ($SadeceIslevler) { return }

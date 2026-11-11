@@ -93,7 +93,7 @@ function Kesif-Calistir {
     ($es | ConvertTo-Json -Depth 3) | Set-Content -LiteralPath (Kopru-Yol 'es.json') -Encoding UTF8
     if ($cevrimici.Count -eq 0) {
         foreach ($v in $dosyaOlur) { Yaz ("  {0}: çevrimdışı" -f (Dns-Etiket $v.DNSName)) }
-        Yaz 'SONUC: Öbür bilgisayar bulundu ama şu an kapalı ya da uykuda. es.json yazıldı; bekçiyi kur, eş açılınca mesajı gelir.'
+        Yaz 'SONUC: Öbür bilgisayar bulundu ama şu an kapalı ya da uykuda. es.json yazıldı; bekçiyi kurabilirsin, eş açılınca onun mesajları gelir. Senin göndereceğin mesaj beklemez: eş açılınca gönder.'
         return 3
     }
     if ($secilen) {

@@ -353,7 +353,7 @@ Köprü, iki bilgisayardaki ajanların birbirine kısa yazılı mesaj ve dosya g
 6. Kapanış (aşağıdaki metin).
 
 **Kapanış mesajı.** Yalnız kendi iki yönü tamam, eşten `kanit-tamam` geldi ve `kopru_durum.ps1` `SONUC: köprü hazır` diyorsa, iki ajan da aynı şablonla yazar (kanıt satırları kendi ölçümleridir):
-> Sana iş kalmadı. Bağlantılar kuruldu ve çalışıyor: <kanıt satırları: ping yolu ve ms, 1 MB ve 10 MB iki yönde sha256 eşleşti, karşı ajan merhaba'ya cevap verdi>. Güvenlik önlemleri bu depoda: KOPRU.md. Durdurmak için: "köprüyü durdur" de.
+> Sana iş kalmadı. Bağlantılar kuruldu ve çalışıyor: <kanıt satırları: ping yolu ve ms, 1 MB ve 10 MB iki yönde sha256 eşleşti, karşı ajan merhaba'ya cevap verdi>. Güvenlik önlemleri bu depoda: KOPRU.md. Seçeneklerin: "köprüyü kapat" / "köprüyü aç" (iki taraf birlikte; Tailscale ve RustDesk açık kalır), başındayken "servisleri kapat" (bilgisayarı ağdan ayırır, uzaktan geri açılmaz; uzaktan bağlıyken kapatırsan bağlantın kopar). Acil durdurma: "köprüyü durdur".
 
 Bir taraf kanıtı tamamlayamadıysa kapanış yazılmaz; ajan yalnız o adımı sana söyler.
 

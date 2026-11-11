@@ -206,12 +206,12 @@ Yasak listesi değil: kullanıcı bilerek seçebilir; ajan önce çalışan güv
 | Belirti | Ne yapılır |
 |---|---|
 | `kopru_kesif.ps1` çıkış 2 | Aday yok. Bekçiyi yine de kur: eş yokken bekçi 30 sn arayla keşfi kendisi dener (`ES YOK` / `ES BULUNDU` satırları). Satırdaki nedeni oku: öbür bilgisayarda Tailscale açık ve aynı hesapta mı; "dosya gönderimi kapalı" yazıyorsa hesapta Send Files'ı aç (REHBER Adım 6a). |
-| Çıkış 3 | Eş bulundu ama kapalı ya da uykuda. `es.json` yazıldı; bekçiyi kur, eş açılınca mesaj gelir. Öbür bilgisayarda ajanı açtırmak için REHBER Adım 6'daki sabit cümleyi kullanıcıya ver. |
+| Çıkış 3 | Eş bulundu ama kapalı ya da uykuda. `es.json` yazıldı; bekçiyi kurabilirsin, eş açılınca onun mesajları gelir. Senin mesajın beklemez: eş açılınca gönder. Öbür bilgisayarda ajanı açtırmak için REHBER Adım 6'daki sabit cümleyi kullanıcıya ver. |
 | Çıkış 5 | Hesapta birden çok aday. Hepsine `kopru_gonder.ps1 -Merhaba -Hedef <ad>` gönder, cevap vereni `kopru_kesif.ps1 -Sec <ad>` ile seç. Tanımadığın bir cihaz varsa `ayar.json` profil `paylasilan`. |
 | Bekçi "ZATEN CALISIYOR" (çıkış 6) | Başka bir bekçi açık; ikincisi gerekmez. Durumu `kopru_durum.ps1` gösterir. |
 | Ek için "henüz gelmedi" | Dosya henüz inmedi. Biraz sonra `kopru_bekle.ps1 -EkMesaj <mesajın yolu>` ile al (ek alındıysa çıkış 0, gelmediyse 3). |
 | Gönderim çıkış 7 (hata freni) | Saatlik tavan doldu. Bir döngü olmadığına bak; kullanıcı isterse `ayar.json`'da `saatlik_tavan` değiştirilir (0 = sınırsız). Ayarlar: `KOPRU.md`. |
-| Gönderim çıkış 8 | Tailscale gönderemedi; eş kapalı olabilir. `kopru_kesif.ps1` çalıştır. Eş çevrimdışıyken davranış ölçülmedi (TEST_PLANI T15-4). |
+| Gönderim çıkış 8 | Tailscale gönderemedi; eş kapalı ya da uykuda olabilir. Taildrop bekletmez: eş açılınca aynı komutu yeniden çalıştır (numara değişmez, gitmiş ek yeniden yüklenmez). Durum için `kopru_durum.ps1 -Ping`. Davranış kod okumasıdır, ölçülmedi (TEST_PLANI T15-4). |
 | Bekçi `ATLANDI (tarayıcıyla inmiş...)` diyor ve bu eşten beklenen bir mesaj | Dosya tarayıcıyla inmiş sayılıyor (Zone.Identifier). Kullanıcıya sor; onaylarsa elle `Unblock-File` ile açılır. |
 | Köprü hiç işlemiyor, `DUR` yazıyor | `DUR` dosyası var (biri durdurdu). Ajan silmez; kullanıcı "köprüyü yeniden başlat" derse silinir. |
 | Bağlam sıkıştı ya da oturum yenilendi, ajan ne olduğunu bilmiyor | Tek kaynak köprü defteridir (`defter.jsonl`); `kopru_durum.ps1` özetler. Hafızaya değil ona güven. |
