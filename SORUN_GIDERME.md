@@ -195,6 +195,28 @@ Yasak listesi değil: kullanıcı bilerek seçebilir; ajan önce çalışan güv
 - Bu bir **teşhis ipucudur**, kesin hüküm değil; sonucu kendi gözünle yorumla.
 - Modemde port açma önerme: rehber bunu istemez.
 
+## F. Hotspot, dosya aktarımı ve köprü notları
+
+**Ağ ve RustDesk (ölçümlerden):**
+- **iPhone hotspot'u ekran kapanınca yayını kesebilir.** Belirti: bağlantı bir süre sonra düşer. Çare: telefonda Kişisel Erişim Noktası ayarlar ekranı açık kalsın. (Gözlem; neden ayrıca araştırılmadı.)
+- **RustDesk dosya aktarımı ayrı bir onay ister.** Oturum açıldıktan sonra dosya aktarımı başlayınca hedef bilgisayarda ikinci bir "Kabul Et" penceresi çıkar. Çare: hedefte kabul et; aktarım o zaman başlar. (Ölçüldü: onay sonrası 100 MB ~11-18 sn, sha256 eşleşti.)
+- **Windows yeni bir ağa bağlanınca kısa süre "internet yok" gösterebilir.** Tahminim: ağ profili oturana kadar; kısa sürdü, nedeni doğrulanmadı. Çare: birkaç saniye bekle, sonra `tailscale status` ile bak.
+
+**Köprü (`KOPRU.md`):**
+| Belirti | Ne yapılır |
+|---|---|
+| `kopru_kesif.ps1` çıkış 2 | Aday yok. Bekçiyi yine de kur: eş yokken bekçi 30 sn arayla keşfi kendisi dener (`ES YOK` / `ES BULUNDU` satırları). Satırdaki nedeni oku: öbür bilgisayarda Tailscale açık ve aynı hesapta mı; "dosya gönderimi kapalı" yazıyorsa hesapta Send Files'ı aç (REHBER Adım 6a). |
+| Çıkış 3 | Eş bulundu ama kapalı ya da uykuda. `es.json` yazıldı; bekçiyi kur, eş açılınca mesaj gelir. Öbür bilgisayarda ajanı açtırmak için REHBER Adım 6'daki sabit cümleyi kullanıcıya ver. |
+| Çıkış 5 | Hesapta birden çok aday. Hepsine `kopru_gonder.ps1 -Merhaba -Hedef <ad>` gönder, cevap vereni `kopru_kesif.ps1 -Sec <ad>` ile seç. Tanımadığın bir cihaz varsa `ayar.json` profil `paylasilan`. |
+| Bekçi "ZATEN CALISIYOR" (çıkış 6) | Başka bir bekçi açık; ikincisi gerekmez. Durumu `kopru_durum.ps1` gösterir. |
+| Ek için "henüz gelmedi" | Dosya henüz inmedi. Biraz sonra `kopru_bekle.ps1 -EkMesaj <mesajın yolu>` ile al (ek alındıysa çıkış 0, gelmediyse 3). |
+| Gönderim çıkış 7 (hata freni) | Saatlik tavan doldu. Bir döngü olmadığına bak; kullanıcı isterse `ayar.json`'da `saatlik_tavan` değiştirilir (0 = sınırsız). Ayarlar: `KOPRU.md`. |
+| Gönderim çıkış 8 | Tailscale gönderemedi; eş kapalı olabilir. `kopru_kesif.ps1` çalıştır. Eş çevrimdışıyken davranış ölçülmedi (TEST_PLANI T15-4). |
+| Bekçi `ATLANDI (tarayıcıyla inmiş...)` diyor ve bu eşten beklenen bir mesaj | Dosya tarayıcıyla inmiş sayılıyor (Zone.Identifier). Kullanıcıya sor; onaylarsa elle `Unblock-File` ile açılır. |
+| Köprü hiç işlemiyor, `DUR` yazıyor | `DUR` dosyası var (biri durdurdu). Ajan silmez; kullanıcı "köprüyü yeniden başlat" derse silinir. |
+| Bağlam sıkıştı ya da oturum yenilendi, ajan ne olduğunu bilmiyor | Tek kaynak köprü defteridir (`defter.jsonl`); `kopru_durum.ps1` özetler. Hafızaya değil ona güven. |
+| Eş mesaj yolladı ama ajanım uyanmadı | Kendiliğinden uyanma yalnız Claude Code'da ve pencere açıkken, bekçi çalışırken olur. Codex/Cursor'da ajana "posta var mı bak" de; bekçi her mesajda çıkar, ajan her uyanışta önce onu yeniden kurar; oturum yenilendiyse de kur. |
+
 ---
 
 *Bu dosyanın kaynak numaraları `KAYNAKLAR.md` içindedir. Ücret, limit ve ayar adları zamanla değişir; yayın gününde yeniden kontrol edilmelidir. Bu rehber gerçek iki ağ arasında henüz test edilmemiştir; ne yapılacağı `TEST_PLANI.md` içindedir.*

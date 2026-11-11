@@ -39,7 +39,9 @@ Yeni ya da gizli bir yöntem değil: yıllardır belgeli "NAT delme" (*UDP hole 
 | Dosya | Ne işe yarar |
 |---|---|
 | `AGENTS.md` | Ajanın kuralları (onay sınıfları, doğru kaynağa bakma, bağlantıyı koparmama). `CLAUDE.md` yalnız bunu Claude Code'a yükletir |
-| `REHBER.md` | Ana rehber: Adım 0-5 + ekler. Her adım: Yap / Kanıt / Geri al / DURUM satırı |
+| `REHBER.md` | Ana rehber: Adım 0-6 + ekler. Her adım: Yap / Kanıt / Geri al / DURUM satırı |
+| `KOPRU.md` | İki bilgisayarın ajanı arası mesaj ve dosya köprüsü: nasıl çalışır, komutlar, ayarlar, güvenlik, sınırlar |
+| `araclar\kopru_*.ps1` | Köprü betikleri (keşif, gönder, bekçi, durum). Yalnız yerel köprü klasörüne yazar |
 | `DURUM.md` | Ajanın defteri (şablon). Bağlantı ya da oturum koparsa ajan buradan devam eder |
 | `TEST_PLANI.md` | Gerçek iki-ağ testi (ikinci cihaz telefon hotspot'unda) ve sonuç tablosu |
 | `SORUN_GIDERME.md` | 15 sık hata, 7 doğru bilinen yanlış, RustDesk bilinen sorunlar, güvensiz "hızlı çözümler" ve güvenli karşılıkları, Türkiye notları |
@@ -53,6 +55,17 @@ Yeni ya da gizli bir yöntem değil: yıllardır belgeli "NAT delme" (*UDP hole 
 | `tests\` | Betiklerin testleri (gerçek ayara dokunmaz) |
 
 Değişiklik yapan betikler varsayılan olarak yalnız **ne yapacağını yazar** (`-DryRun`); gerçekten yapmaları için `-Uygula` gerekir (tek istisna: geri alma görevini kaldıran `-Iptal`). Duvarı değiştiren üç betik (`geri_al_zamanlayici`, `rdp_tailscale_kilit`, `rustdesk_tailscale_kilit`) yönetici PowerShell ister (Başlat'a sağ tıkla, "Windows PowerShell (Yönetici)"); `kontrol` ve `baglanti_kanit` istemez; hiçbiri kendini yönetici yapmaz, pencere açmaz, bir şey indirmez. Hepsi şöyle çalıştırılır: `powershell -NoProfile -ExecutionPolicy Bypass -File araclar\<betik>.ps1`.
+
+## Evde de, dışarıda da
+
+Aynı adres (A'nın Tailscale adresi `100.x.y.z`) her yerde çalışır: evde aynı Wi-Fi'deyken Tailscale yolu ev ağının içinden kurar, dışarıdayken internet üzerinden. Ölçtüklerimiz:
+- **Aynı ev Wi-Fi'sinde:** doğrudan yol 4-8 ms (ilk ping bir kez ~120 ms). Taildrop ile 100 MB ~9 sn, 1 GB 79-94 sn (~11-12 MB/s); 18/18 dosyada sha256 eşleşti. RustDesk, `100.x.y.z` adresiyle aynı ev ağında bağlandı; RustDesk dosya aktarımıyla 100 MB ~11-18 sn, sha256 eşleşti. RustDesk'te dosya aktarımı ikinci bir "Kabul Et" onayı ister.
+- **Telefon hotspot'uyla (farklı ağ):** doğrudan yol 38-87 ms; 10 MB eve doğru 3,4 MB/s, telefona doğru 1,2 MB/s; 12/12 dosyada sha256 eşleşti.
+
+Dosya aktarımı için RustDesk'in kendi dosya aktarımı ya da Tailscale'in Taildrop özelliği kullanılır. Ayrıntı: `REHBER.md` "Günlük kullanım".
+
+## İki bilgisayarın ajanları konuşur (köprü)
+İstersen iki bilgisayardaki ajanlar aynı Tailscale hesabı üzerinden (Taildrop ile) birbirine kısa mesaj ve dosya gönderir: durum sorar, ping yolunu ve dosya aktarımını sha256 ile kanıtlar. Mesaj **veri** sayılır; ajan kendiliğinden yalnız sabit bir ölçüm listesini yapar, gerisini sana sorar. Kendiliğinden uyanma yalnız Claude Code'da ve pencere açıkken çalışır; Codex/Cursor'da ajana "posta var mı bak" dersin. Kurulum `REHBER.md` Adım 6; ne yaptığı, ayarlar, güvenlik ve sınırlar `KOPRU.md`.
 
 ## Testleri çalıştırmak (isteğe bağlı)
 ```powershell

@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File araclar\\kopru_kesif.ps1*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File araclar\\kopru_kesif.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File araclar/kopru_kesif.ps1*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File araclar/kopru_kesif.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File araclar\\kopru_gonder.ps1*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File araclar\\kopru_gonder.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File araclar/kopru_gonder.ps1*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File araclar/kopru_gonder.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File araclar\\kopru_bekle.ps1*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File araclar\\kopru_bekle.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File araclar/kopru_bekle.ps1*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File araclar/kopru_bekle.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File araclar\\kopru_durum.ps1*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File araclar\\kopru_durum.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File araclar/kopru_durum.ps1*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File araclar/kopru_durum.ps1*)",
+      "PowerShell(powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File araclar\\kopru_bekle.ps1*)",
+      "Bash(powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File araclar\\kopru_bekle.ps1*)",
+      "PowerShell(powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File araclar/kopru_bekle.ps1*)",
+      "Bash(powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File araclar/kopru_bekle.ps1*)"
+    ],
+    "ask": [
+      "Edit(/araclar/kopru_*)",
+      "Write(/araclar/kopru_*)"
+    ]
+  }
+}

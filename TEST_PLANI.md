@@ -151,6 +151,13 @@ Süreyi kapatmak bir güvenlik ödünüdür; kullanıcı seçer.
 4. Ajanın uzaktan `tailscale up --force-reauth` çalıştırmadığını T13-5 ile doğrula.
 - Not: konsol sayfasında seçeneğin adı yayın gününde değişmiş olabilir; farklıysa görünen adı `DURUM.md`'ye yaz.
 
+## T15. Köprü (iki ajan arası mesaj ve dosya, `KOPRU.md`)
+1. **T15-1 Birim testi:** `powershell -NoProfile -ExecutionPolicy Bypass -File tests\test_kopru.ps1` (sahte Tailscale ile; gerçek ağa, köprü klasörüne dokunmaz). Beklenen: hepsi geçti, çıkış 0.
+2. **T15-2 Gerçek keşif:** `P araclar\kopru_kesif.ps1` iki bilgisayarlı hesapta eşi bulmalı (çıkış 0).
+3. **T15-3 Temiz oda:** depoyu yeni bir bilgisayara kopyala; ajan yalnız `REHBER.md` Adım 6 ile el sıkışma, kanıt turu (ping, 1 ve 10 MB iki yön sha256) ve kapanış mesajını yapsın. Beklenen: iki tarafta `kopru_durum.ps1` "köprü hazır", kapanış yalnız iki taraf kanıtı tamamken.
+4. **T15-4 Eş çevrimdışıyken gönderim:** eşin Tailscale'i kapalıyken `kopru_gonder.ps1` ne yapıyor (çıkış kodu, mesaj, eş açılınca mesaj ulaşıyor mu)? Eşin ağını kapatmak ağ ayarı sayılır: kullanıcı onayıyla.
+5. **T15-5 İzin kuralı:** `.claude/settings.json` kuralları Windows'ta gerçekten eşleşiyor mu? Ölçülen (Claude Code 2.1.322, `claude -p` başsız kip): güven verilmeden kurallar hiç uygulanmadı; PowerShell aracında tam biçim "iç içe PowerShell süreci doğrulanamaz" diye ve doğrudan çağrı da onay istedi (tutmadı). Denenecek: etkileşimli kip; Git Bash varken Bash aracı; Adım 6b'nin tamamı normal izin kipindeki bir makinede (temiz oda denemesinde ikinci ajan izin atlama kipindeydi, 6b orada denenemedi).
+
 ## T10. Sonuç tablosu (DURUM.md'ye yaz; sorun varsa issue aç)
 | Adım | Geçti / kaldı | Not (komut çıktısı, hata metni) |
 |---|---|---|
@@ -170,6 +177,9 @@ Süreyi kapatmak bir güvenlik ödünüdür; kullanıcı seçer.
 | T5b-9 telefon klavyesi ve parola | kayıtta görüldü (deneme 1) | ilk kalıcı parola telefonda kabul edilmedi; yalnız İngilizce harf ve rakamla olunca kabul edildi (neden doğrulanmadı) |
 | T5b-10 kafe önlemi (duvar engeli) kuruluyken bağlanma | geçti (deneme 1) | telefon engel kuralları kuruluyken bağlandı |
 | T5b-11 `araclar\rustdesk_tailscale_kilit.ps1` gerçek makinede | kısmen (deneme 1) | aynı adres aralıklarıyla (IPv6 `::2-` dahil) deneme sürümü yönetici olarak, hata durdurması açıkken 2 kuralı kurdu; depodaki son sürüm gerçek makinede denenmedi |
+| T5b-12 aynı ev ağında Tailscale yolu | geçti (deneme 1, ek ölçüm) | aynı ev Wi-Fi'sinde doğrudan yol 4-8 ms (ilk ping bir kez ~120 ms); önceki ölçümde telefonla 118 (ilk), 15, 23, 16 ms. İnternet kanıtı değildir (o T1-T3) |
+| T5b-13 dosya aktarımı (RustDesk / Taildrop) | geçti (deneme 1, ek ölçüm) | aynı ev Wi-Fi'sinde Taildrop: 100 MB ~9 sn, 1 GB 79-94 sn (~11-12 MB/s), 18/18 dosya sha256 eşleşti; RustDesk dosya aktarımı 100 MB ~11-18 sn, sha256 eşleşti (RustDesk'te ikinci bir "Kabul Et" onayı istedi). Telefon hotspot'u ile Taildrop: doğrudan 38-87 ms, 10 MB eve doğru 3,4 MB/s, telefona doğru 1,2 MB/s, 12/12 sha256 eşleşti. 11-12 MB/s tavanının nedeni ölçülmedi |
+| T5b-14 evde aynı Wi-Fi'den gerçek RustDesk bağlantısı | geçti (deneme 1, ek ölçüm) | RustDesk aynı ev ağında Tailscale `100.x.y.z` adresiyle bağlandı; hotspot için de telefonla denendi (T5b-3). `mstsc` denenmedi |
 | T6 kilit / UAC / reboot | denenmedi | |
 | T7 uyku (kontrol.ps1 uyku=kapali, 15 dk bekleme) | denenmedi | ön kontrolde uyku kapalı görüldü; 15 dk bekleme yapılmadı |
 | T8 güvenlik | denenmedi | |
@@ -178,5 +188,10 @@ Süreyi kapatmak bir güvenlik ödünüdür; kullanıcı seçer.
 | T12 kontrol/kanıt betikleri (7 kontrol, 4 servis dahil) | kısmen (deneme 1) | kontrol.ps1 bilgisayar A'da çalıştı (Home, uyku kapalı, servisler tamam); kanıt betiği iki ağda "DOĞRUDAN" hükmü verdi; 7 kontrolün tamamı denenmedi |
 | T13 AGENTS.md/CLAUDE.md yükleniyor mu (Claude Code / Codex ZIP) | kısmen | Claude Code (geçici kopya klasörde, yalnız okuma kipi): kuralları kendiliğinden uyguladı (önce DURUM.md, sonra Adım 0'ın üç sorusu, hiçbir şey değiştirmedi); ilk cümle "Kuralları okudum" yazılmadı. İlk denemede şablondaki örnek DURUM satırını gerçek sandı; satır kaldırıldı, ikinci deneme temiz. Codex: bu makinedeki model ayarı hata verdi, denenmedi. Cursor: denenmedi |
 | T14 anahtar süresi seçimi | denenmedi | kapattı / hatırlatma tarihi: |
+| T15-1 köprü birim testi (`tests\test_kopru.ps1`) | geçti | 68/68, sahte Tailscale |
+| T15-2 gerçek keşif | geçti | eş bulundu, çıkış 0 |
+| T15-3 temiz oda: el sıkışma + kanıt turu + kapanış | geçti (2026-11-11) | İkinci bilgisayardaki ajan yalnız REHBER Adım 6 ile tamamladı; 1 ve 10 MB iki yön sha256 eşit, iki tarafta "köprü hazır". Ders: ayrık başlatılan bekçi ajanı uyandırmadı (40 dk gecikme), KOPRU Sınırlar'a yazıldı. Bu denemede ikinci taraf izin atlama kipindeydi; 6b ayrı ölçülecek (T15-5) |
+| T15-4 eş çevrimdışıyken gönderim | ölçülmedi | kullanıcı onayıyla denenecek |
+| T15-5 izin kuralı Windows'ta eşleşiyor mu | kısmen: PowerShell aracında tutmadı; Bash aracında ölçülmedi | başsız kipte ölçüldü; güvensiz klasörde kurallar hiç uygulanmadı. Etkileşimli kip denenecek |
 
 Eksik tahmin: T3'te gecikme, "5 ms"yi **yerel ağda** ölçtük diye internetten bekleme; yol uzunluğuna bağlıdır (SORUN_GIDERME yanlış 3). Hissedilen gecikmeyi ayrıca not et: ekranda fareyi oynat, görüntünün ne kadar sonra geldiğini say.

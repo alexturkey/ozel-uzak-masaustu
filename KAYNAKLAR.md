@@ -128,6 +128,7 @@ Bölümler: [Tailscale](#tailscale) · [Windows](#windows) · [RustDesk](#rustde
 - `direct-server`: "Enable direct IP access." Konum: "Desktop ... Settings → Security → Security → Enable direct IP access"; mobil: "Settings → Share screen → Direct IP access". Varsayılan: N (kapalı). Örnek: `direct-server=Y`.
 - `direct-access-port`: "Direct IP access port." Varsayılan ve örnek: `21118` (`direct-access-port=21118`).
 - `whitelist`: "Use IP Whitelisting." Konum: "Settings → Security → Security → Use IP Whitelisting". Boş değer "means no filter"; "CIDR notation is supported, e.g. whitelist=192.168.1.0/24,10.0.0.5."
+- `enable-file-transfer`: "Enable file copy and paste or file transfer (session) for incoming connections." Konum: "Desktop Settings → Security → Permissions → Enable file transfer". Varsayılan: "Y" (2026-11-11 okundu).
 - `id-whitelist`: "Note: The ID is reported by the connecting client, so it is not an authentication mechanism. This whitelist reduces exposure, it does not replace the password or 2FA."
 - `approve-mode`: "Accept incoming connections via password or manually click." Konum: "Desktop Settings → Security → Password"; değerler password, click, password-click (varsayılan password-click). `verification-method`: "What type of password can be used, temporary password refers to the one-time random password.", değerler use-temporary-password, use-permanent-password, use-both-passwords (varsayılan use-both-passwords).
 - Sayfa kapsamı: ayarlar "RustDesk custom clients, user settings, and server-side policy" için.
@@ -348,3 +349,31 @@ K9 notu (özet): alan adları sayfadan; sayfa netcheck örnek çıktısı göste
 
 **[K61] Tailscale kaynak deposu, https://github.com/tailscale/tailscale** (belge; README ve LICENSE ham)
 - README: "This repository contains the majority of Tailscale's open source code." ; LICENSE: "BSD 3-Clause License".
+
+**[K62] Tailscale, Taildrop, https://tailscale.com/kb/1106/taildrop** (belge; 2026-11-11 okundu)
+- "Taildrop lets you send files between your personal devices on a Tailscale network (known as a tailnet)."
+- "Taildrop is currently in alpha." ; "Taildrop is available for all plans." ; sayfaya göre ağın katılması (opt-in) gerekir: yönetim sayfası, General ayarları, "Send Files".
+- Windows: sağ tık "Send with Tailscale"; gelen dosya kullanıcının İndirilenler (Downloads) klasörüne. iOS: Paylaş menüsünden gönderilir; gelen dosya bildirim açar.
+- "transfers files over encrypted peer-to-peer connections, using the fastest available path." ; "Taildrop is currently limited to sending files between your own personal devices."
+
+**[K62 ek] Tailscale, Taildrop, https://tailscale.com/kb/1106/taildrop** (belge; KOPRU.md için ek alıntılar)
+- "You cannot send files to devices owned by other users" ; "You cannot use Taildrop to send files to and from nodes you have tagged."
+- "Because it's an alpha feature, you must opt in" ... "turn on the 'Send Files' feature."
+
+**[K63] OWASP, LLM01 Prompt Injection, https://genai.owasp.org/llmrisk/llm01-prompt-injection/** (belge; KOPRU.md "Güvenlik")
+- "Indirect prompt injections occur when an LLM accepts input from external sources, such as websites or files."
+
+**[K64] OWASP, LLM06 Excessive Agency, https://genai.owasp.org/llmrisk/llm062025-excessive-agency/** (belge; KOPRU.md "Güvenlik")
+- "Implement authorization in downstream systems rather than relying on an LLM to decide if an action is allowed or not."
+
+**[K65] Claude Code, İzinler, https://code.claude.com/docs/en/permissions** (belge; KOPRU.md "Güvenlik" ve REHBER Adım 6b)
+- "Bash permission patterns that try to constrain command arguments are fragile."
+- "`permissions.allow` rules and `permissions.additionalDirectories` entries in a project's `.claude/settings.json` grant capability, so Claude Code applies them only after you accept the workspace trust dialog for that folder. The dialog lists the rules and directories the folder would grant so you can review them first."
+- "Every subcommand must be allowed for a compound command to run without a prompt"
+- "Rules are evaluated in order: deny, then ask, then allow."
+
+**[K66] Claude Code, Tools reference: https://code.claude.com/docs/en/tools-reference** (belge; okundu 2026-11-11)
+- "Windows: the tool is available only when Git Bash is installed" (Monitor aracı için).
+- "Windows without Git Bash: the tool is enabled automatically." (PowerShell aracı)
+- "When the tool is enabled, Claude treats PowerShell as the primary shell."
+- "A command that the main conversation ... started keeps running after a final response, until it exits, is stopped, or reaches its time limit." (arka plan komutu)
