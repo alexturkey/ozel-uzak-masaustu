@@ -1,6 +1,6 @@
 # TEST_PLANI.md: gerçek iki-ağ testi
 
-Bu rehberdeki adımlar henüz gerçek iki ağ arasında sınanmadı; bu test onu yapar. Sonuçları `DURUM.md`'ye yaz; bir sorun ya da düzeltme bildirmek istersen depoda issue aç.
+Bu test, rehberin gerçek iki ağ arasında çalışıp çalışmadığını sınar. Sonuç tablosunda **"deneme 1"**, yazarların yaptığı ilk gerçek denemedir (Windows 10 Home bilgisayar A, B olarak telefon mobil veride); **"kayıtta görüldü"** o denemenin kaydında gözlenip ayrıca ölçülmeyen şey demektir. "Denenmedi" yazan satırları sen sınayabilirsin. Sonuçları `DURUM.md`'ye yaz; bir sorun ya da düzeltme bildirmek istersen depoda issue aç.
 
 ## Hazırlık (10 dk)
 - **Bilgisayar A**: evdeki, uzaktan bağlanılacak bilgisayar. Hep açık, uyku kapalı.

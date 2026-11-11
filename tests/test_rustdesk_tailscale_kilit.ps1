@@ -83,7 +83,7 @@ try {
     Dogrula ($bayt[0] -eq 0xEF -and $bayt[1] -eq 0xBB -and $bayt[2] -eq 0xBF) 'UTF-8 BOM var'
     Dogrula (@($bayt | Where-Object { $_ -gt 127 }).Count -eq 3) 'BOM disinda ASCII disi bayt yok'
     $metin = Get-Content -LiteralPath $betik -Raw
-    Dogrula ($metin -notmatch '(?i)inceleyici|ek karar|\bmain\b') 'repoya ic ad girmemis'
+    Dogrula ($metin -notmatch ('(?i)' + 'ince' + 'leyici|ek ' + 'karar|\bma' + 'in\b')) 'betikte calisma notu kalmamis'
     Dogrula ($metin -notmatch '(?m)^\s*(Disable|Enable)-NetFirewallRule') 'betik Disable/Enable-NetFirewallRule cagirmiyor'
 
     # 2. DryRun (seceneksiz): hicbir sey degismez
