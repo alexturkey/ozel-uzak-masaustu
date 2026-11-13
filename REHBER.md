@@ -274,7 +274,7 @@ Arayüz adları önce İngilizce, yanında Türkçe karşılığıyla verilir. T
 ### Beklenen ekranlar (H5'ten önce oku)
 > **Bağlanırken görebileceğin ve hata OLMAYAN dört şey**
 >
-> 1. **Kırmızı kalkan ve "direct and unencrypted connection" (Türkçe arayüzde: "Doğrudan ve şifrelenmemiş bağlantı (TCP)").** RustDesk doğrudan IP bağlantısını kendisi şifrelemez ve bunu böyle işaretler. Tailscale adresine (`100.x.y.z`) bağlanıyorsan trafik Tailscale tüneliyle şifrelenir; Tailscale'in kendi yazısı bunu söylüyor ve RustDesk geliştiricisi doğrudan IP'yi bir VPN ile birlikte kullanmayı öneriyor. **Koşul: bağlandığın adres `100.` ile başlıyorsa.** Başka bir adrese (örneğin evinin `192.168...` adresine ya da bir internet adresine) doğrudan bağlanıyorsan bu uyarı gerçektir: dur, o adrese bağlanma. Bu yüzden H3'teki beyaz liste gerekli: Tailscale dışı adresler zaten bağlanamasın.
+> 1. **Kırmızı kalkan ve "direct and unencrypted connection" (Türkçe arayüzde: "Doğrudan ve şifrelenmemiş bağlantı (TCP)").** RustDesk doğrudan IP bağlantısını kendisi şifrelemez ve bunu böyle işaretler. Tailscale adresine (`100.x.y.z`) bağlanıyorsan trafik Tailscale tüneliyle şifrelenir (Tailscale cihazlar arasındaki trafiği şifreler ve kendisi okuyamaz: KAYNAKLAR K58, K59). RustDesk'in Tailscale ile kullanımını anlatan resmî bir tarif bulamadık (KAYNAKLAR, Doğrulanmayanlar 6). **Koşul: bağlandığın adres `100.` ile başlıyorsa.** Başka bir adrese (örneğin evinin `192.168...` adresine ya da bir internet adresine) doğrudan bağlanıyorsan bu uyarı gerçektir: dur, o adrese bağlanma. Bu yüzden H3'teki beyaz liste gerekli: Tailscale dışı adresler zaten bağlanamasın.
 > 2. **Kurulumdan sonra altta "Ready, For faster connection, please set up your own server".** Bu yalnız RustDesk'in kendi (kamu) sunucusunu kullananlara öneridir. Bu rehberin yolu o sunucuyu kullanmaz; yok say, ayar yapma, sunucu kurma.
 > 3. **Bağlanınca parola sorulması.** Beklenen; H4'te belirlediğin kalıcı parolayı sen yazarsın (ajana verme). Sorulmuyorsa (ve telefonda "Parolayı hatırla" işaretli değilse) dur ve DURUM.md'ye yaz.
 > 4. **A'da sağ üstte "Kabul Et / İptal" penceresi.** Parola yoksa ya da yanlışsa çıkar (H4). Bağlanan sensen dokunma; İptal telefondaki isteği de kapatır. Cihaz adını tanımıyorsan İptal'e bas.
@@ -312,7 +312,10 @@ Arayüz adları önce İngilizce, yanında Türkçe karşılığıyla verilir. T
   6. Kurulan her program resmî kaynaktan mı indirildi?
   7. Bekleyen geri alma görevi var mı? (`P araclar\geri_al_zamanlayici.ps1 -Iptal -DryRun` söyler; iş bittiyse ve "kalsın" dediysen `-Iptal`.)
   8. Anahtar süresi için seçim yapıldı mı (1b: kapatıldı ya da hatırlatma tarihi yazıldı)?
-- **Kanıt:** sekiz sorunun cevabı DURUM.md'de; "hayır" çıkan madde düzeltilmeden "bitti" denmez.
+  9. Tailscale güncel mi? Ajan iki bilgisayarda `tailscale version` çalıştırır ve sürümü yazar; Tailscale'in güvenlik bülteni sayfasıyla (KAYNAKLAR K60) karşılaştırır. Otomatik güncelleme açık mı (`tailscale debug prefs` çıktısında `AutoUpdate`)? Telefondaki uygulama da güncel tutulur.
+  10. Bu rehberin kullanmadığı Tailscale özellikleri kapalı mı? `tailscale debug prefs` çıktısında `RunSSH` ve `RunWebClient` `false`; `tailscale serve status` ve `tailscale funnel status` boş. (2026 Ekim'deki "Tailworm" bültenleri TS-2026-014..017 bu SSH ve Serve özelliklerindeydi ve 1.104.4'te kapandı; K60.)
+  11. Tailscale ağında (tailnet) yalnız kendi cihazların mı var? Başka kişi davet ettiysen ya da bir cihazını paylaştıysan, Tailscale'in varsayılan erişim kuralı ağdaki herkesin her kapıya ulaşmasına izin verir: o zaman yönetim konsolunda erişim kurallarını (ACL) daralt, RustDesk beyaz listesine de `100.64.0.0/10` yerine yalnız izin verdiğin cihazların `100.x.y.z` adreslerini yaz (tam adresle liste sınanmadı). Kullanmadığın ya da kaybettiğin cihazı konsoldan sil.
+- **Kanıt:** on bir sorunun cevabı DURUM.md'de; "hayır" çıkan madde düzeltilmeden "bitti" denmez.
 - **Geri al:** gerek yok.
 - **DURUM satırı:** `| <saat> | 4 guvenlik | bitti | 2FA acik, port yok, kilit/beyaz liste tamam, uyku kapali, resmi kaynak, gorev yok | gerek yok | 5 gercek test |`
 

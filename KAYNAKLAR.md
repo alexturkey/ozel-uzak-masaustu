@@ -377,3 +377,7 @@ K9 notu (özet): alan adları sayfadan; sayfa netcheck örnek çıktısı göste
 - "Windows without Git Bash: the tool is enabled automatically." (PowerShell aracı)
 - "When the tool is enabled, Claude treats PowerShell as the primary shell."
 - "A command that the main conversation ... started keeps running after a final response, until it exits, is stopped, or reaches its time limit." (arka plan komutu)
+
+**[K60] Tailscale, Security bulletins, https://tailscale.com/security-bulletins** (belge, 2026-11-13 okundu; özet araçla, birebir alıntı kısa)
+- TS-2026-014..017 (26 Ekim 2026, "Tailworm" bulguları): Tailscale SSH ve Tailscale Serve özelliklerinde; düzeltme 1.104.4. Saldırganın tailnet içinde yetkili bir cihazı olması gerekir.
+- Açıklama: Bu rehber Tailscale SSH ve Serve kullanmaz; Adım 4 madde 9-10 sürümü ve bu özelliklerin kapalı olduğunu denetletir. Tailscale SSH sunucusu Windows'ta çalışmaz (Tailscale SSH belgesi).
